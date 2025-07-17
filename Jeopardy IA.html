@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeopardy con IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .dark body {
+            background-color: #1f2937; /* gray-800 */
+            color: #f3f4f6; /* gray-100 */
+        }
+        .light body {
+            background-color: #f9fafb; /* gray-50 */
+            color: #111827; /* gray-900 */
+        }
+        .jeopardy-button {
+            transition: all 0.2s ease-in-out;
+            min-height: 80px; /* Minimum height for better touch targets */
+        }
+        .jeopardy-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .jeopardy-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            font-size: 1.5rem; /* Larger font for modal */
+        }
+        .dark .modal-content {
+            background-color: #374151; /* gray-700 */
+            color: #f3f4f6; /* gray-100 */
+        }
+
+        /* Larger fonts for projection */
+        body { font-size: 18px; }
+        h1, h2, h3 { font-size: 2.5rem; }
+        button, input, select, label { font-size: 1.25rem; }
+        .jeopardy-button { font-size: 1.75rem; font-weight: bold; }
+        #questionModalContent p { font-size: 2rem; } 
+        .score-display { font-size: 1.5rem; }
+        .ai-generated-text {
+            font-size: 1.2rem;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e9e9e9;
+            border-radius: 5px;
+            text-align: left;
+        }
+        .dark .ai-generated-text {
+            background-color: #4b5563; /* gray-600 */
+        }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            h1, h2, h3 { font-size: 2rem; }
+            button, input, select, label { font-size: 1rem; }
+            .jeopardy-button { font-size: 1.2rem; min-height: 60px; }
+            #questionModalContent p { font-size: 1.5rem; } 
+            .score-display { font-size: 1.2rem; }
+            .modal-content { font-size: 1.2rem; }
+            .ai-generated-text { font-size: 1rem; }
+        }
+        .category-title {
+            font-size: 1.5rem; /* Larger category titles */
+            font-weight: 600;
+            text-align: center;
+            padding: 0.5rem;
+            background-color: #e5e7eb; /* gray-200 */
+            border-radius: 0.375rem; /* rounded-md */
+            margin-bottom: 0.5rem;
+        }
+        .dark .category-title {
+            background-color: #4b5563; /* gray-600 */
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            color: white;
+            font-size: 2rem;
+        }
+        .spinner {
+            border: 8px solid #f3f3f3; /* Light grey */
+            border-top: 8px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="light">
+
+    <div id="loadingOverlay" style="display: none;">
+        <div class="spinner"></div>
+        <p data-translate-key="loadingMessage">Cargando...</p>
+    </div>
+
+    <div id="setupScreen" class="p-4 md:p-8 min-h-screen flex flex-col items-center justify-center">
+        <div class="w-full max-w-2xl bg-white dark:bg-gray-800 p-6 md:p-8 rounded-lg shadow-xl">
+            <h1 class="text-3xl md:text-4xl font-bold mb-6 text-center text-blue-600 dark:text-blue-400" data-translate-key="welcomeTitle">¡Bienvenido a Jeopardy AI!</h1>
+
+            <div class="mb-4">
+                <label for="numTeams" class="block text-sm font-medium mb-1" data-translate-key="numTeamsLabel">Número de Equipos (2-5):</label>
+                <input type="number" id="numTeams" min="2" max="5" value="2" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1" data-translate-key="topicModeLabel">Modalidad de Tema:</label>
+                <div class="flex items-center space-x-4">
+                    <div>
+                        <input type="radio" id="singleTopicMode" name="topicMode" value="single" checked class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                        <label for="singleTopicMode" class="ml-2" data-translate-key="singleTopicRadioLabel">Un Sol Tema</label>
+                    </div>
+                    <div>
+                        <input type="radio" id="multipleTopicsMode" name="topicMode" value="multiple" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                        <label for="multipleTopicsMode" class="ml-2" data-translate-key="multipleTopicsRadioLabel">Múltiples Temes (1 per categoria)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="singleTopicContainer" class="mb-4">
+                <label for="gameTopic" class="block text-sm font-medium mb-1" data-translate-key="gameTopicLabel">Tema Principal del Juego:</label>
+                <input type="text" id="gameTopic" placeholder="Ej: Historia Universal, Ciencias Naturales" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div id="multipleTopicsContainer" class="mb-4 space-y-3" style="display: none;">
+                <p class="text-sm font-medium" data-translate-key="multipleTopicsHint">Define un tema para cada una de las 5 categorías:</p>
+                <div>
+                    <label for="categoryTopic1" class="block text-xs font-medium mb-0.5"><span data-translate-key="categoryTopicLabelPrefix">Tema Categoría</span> 1:</label>
+                    <input type="text" id="categoryTopic1" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 text-sm">
+                </div>
+                <div>
+                    <label for="categoryTopic2" class="block text-xs font-medium mb-0.5"><span data-translate-key="categoryTopicLabelPrefix">Tema Categoría</span> 2:</label>
+                    <input type="text" id="categoryTopic2" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 text-sm">
+                </div>
+                <div>
+                    <label for="categoryTopic3" class="block text-xs font-medium mb-0.5"><span data-translate-key="categoryTopicLabelPrefix">Tema Categoría</span> 3:</label>
+                    <input type="text" id="categoryTopic3" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 text-sm">
+                </div>
+                <div>
+                    <label for="categoryTopic4" class="block text-xs font-medium mb-0.5"><span data-translate-key="categoryTopicLabelPrefix">Tema Categoría</span> 4:</label>
+                    <input type="text" id="categoryTopic4" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 text-sm">
+                </div>
+                <div>
+                    <label for="categoryTopic5" class="block text-xs font-medium mb-0.5"><span data-translate-key="categoryTopicLabelPrefix">Tema Categoría</span> 5:</label>
+                    <input type="text" id="categoryTopic5" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 text-sm">
+                </div>
+            </div>
+
+
+            <div class="mb-4">
+                <label for="eduLevel" class="block text-sm font-medium mb-1" data-translate-key="eduLevelLabel">Nivel Educativo:</label>
+                <input type="text" id="eduLevel" placeholder="Ej: Primaria, 1º de ESO, Universitario" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label for="uiLanguage" class="block text-sm font-medium mb-1" data-translate-key="uiLanguageLabel">Idioma de la Interfaz:</label>
+                    <select id="uiLanguage" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="es" data-translate-key="langSpanish">Español</option>
+                        <option value="ca" data-translate-key="langCatalan">Català</option>
+                        <option value="gl" data-translate-key="langGalician">Galego</option>
+                        <option value="eu" data-translate-key="langBasque">Euskara</option>
+                        <option value="en" data-translate-key="langEnglish">English</option>
+                        <option value="other" data-translate-key="langOther">Otros...</option>
+                    </select>
+                    <div id="otherLanguageInputContainer" class="mt-2" style="display: none;">
+                        <input type="text" id="otherUiLanguage" placeholder="Escribe el idioma" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 mb-1">
+                        <button id="translateOtherUiLangButton" class="w-full bg-green-500 hover:bg-green-600 text-white p-2 rounded-md" data-translate-key="translateButton">Traducir</button>
+                    </div>
+                </div>
+                <div>
+                    <label for="aiLanguage" class="block text-sm font-medium mb-1" data-translate-key="aiLanguageLabel">Idioma para Preguntas/Respuestas:</label>
+                    <input type="text" id="aiLanguage" placeholder="Ej: inglés, latín, francés" value="español" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+
+            <button id="startGameButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md text-xl" data-translate-key="startGameButton">Comenzar Juego</button>
+        </div>
+    </div>
+
+    <div id="gameScreen" class="p-2 md:p-4 min-h-screen" style="display: none;">
+        <div class="flex justify-between items-center mb-4 flex-wrap">
+            <h2 class="text-2xl md:text-3xl font-bold" data-translate-key="gameTitle">Jeopardy</h2>
+            <div class="flex items-center space-x-2 md:space-x-4">
+                <button id="themeToggle" class="p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm md:text-base">🌓</button>
+                <button id="fullscreenToggle" class="p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm md:text-base" data-translate-key="fullscreenButton">Pantalla Completa</button>
+            </div>
+        </div>
+
+        <div id="scoreboard" class="mb-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow">
+            <h3 class="text-xl font-semibold mb-2" data-translate-key="scoresTitle">Puntuaciones:</h3>
+            <div id="teamScoresContainer" class="flex flex-wrap gap-4">
+                <!-- Team scores will be injected here -->
+            </div>
+            <p class="mt-2 text-lg"><span data-translate-key="currentTurnLabel">Turno del Equipo:</span> <span id="currentTeamDisplay" class="font-bold"></span></p>
+        </div>
+
+        <div id="gameBoard" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 md:gap-4">
+            <!-- Categories and questions will be injected here -->
+        </div>
+    </div>
+
+    <div id="questionModal" class="modal">
+        <div id="questionModalContent" class="modal-content dark:bg-gray-700 dark:text-gray-100"> 
+            <p id="questionText" class="mb-4 text-xl md:text-2xl"></p>
+            <div id="hintContainer" class="ai-generated-text my-2" style="display:none;"></div>
+            <p id="answerText" class="mb-6 text-lg md:text-xl font-semibold" style="display:none;"></p>
+            <div id="explanationContainer" class="ai-generated-text my-2" style="display:none;"></div>
+
+            <div class="space-y-2 md:space-y-0 md:space-x-2 flex flex-col md:flex-row justify-center mb-3 flex-wrap">
+                <button id="getHintButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md text-base" data-translate-key="getHintButton">✨ Pista Inteligente</button>
+                <button id="showAnswerButton" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-md" data-translate-key="showAnswerButton">Mostrar Respuesta</button>
+                <button id="getExplanationButton" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-md text-base" style="display:none;" data-translate-key="getExplanationButton">✨ Explicación Adicional</button>
+            </div>
+            <div class="space-y-2 md:space-y-0 md:space-x-2 flex flex-col md:flex-row justify-center">
+                <button id="correctButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-md" style="display:none;" data-translate-key="correctButton">Correcto</button>
+                <button id="incorrectButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-md" style="display:none;" data-translate-key="incorrectButton">Incorrecto</button>
+            </div>
+             <button id="closeModalButton" class="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md text-sm" data-translate-key="closeButton">Cerrar</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase imports 
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables from environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'jeopardy-ai-game';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth, userId;
+        let app;
+        let gameTopicForAI = ''; 
+        let eduLevelForAI = ''; 
+        let langAIForAI = ''; 
+
+
+        // UI Text Elements (default: Spanish)
+        const uiTextElements = {
+            welcomeTitle: "¡Bienvenido a Jeopardy AI!",
+            numTeamsLabel: "Número de Equipos (2-5):",
+            topicModeLabel: "Modalidad de Tema:",
+            singleTopicRadioLabel: "Un Sol Tema",
+            multipleTopicsRadioLabel: "Múltiples Temes (1 per categoria)",
+            multipleTopicsHint: "Define un tema para cada una de las 5 categorías:",
+            categoryTopicLabelPrefix: "Tema Categoría",
+            gameTopicLabel: "Tema Principal del Juego:",
+            eduLevelLabel: "Nivel Educativo:",
+            uiLanguageLabel: "Idioma de la Interfaz:",
+            aiLanguageLabel: "Idioma para Preguntas/Respuestas:",
+            startGameButton: "Comenzar Juego",
+            gameTitle: "Jeopardy",
+            scoresTitle: "Puntuaciones:",
+            currentTurnLabel: "Turno del Equipo:",
+            fullscreenButton: "Pantalla Completa",
+            exitFullscreenButton: "Salir de Pantalla Completa",
+            showAnswerButton: "Mostrar Respuesta",
+            correctButton: "Correcto",
+            incorrectButton: "Incorrecto",
+            nextTurnButton: "Siguiente Turno", 
+            langSpanish: "Español",
+            langCatalan: "Català",
+            langGalician: "Galego",
+            langBasque: "Euskara",
+            langEnglish: "English",
+            langOther: "Otros...",
+            translateButton: "Traducir",
+            loadingMessage: "Cargando...",
+            questionGenerationError: "Error al generar preguntas. Intenta con otro tema o nivel.",
+            translationError: "Error al traducir. Intenta de nuevo.",
+            allQuestionsAnswered: "¡Todas las preguntas han sido respondidas! Juego terminado.",
+            teamLabel: "Equipo",
+            finalScores: "Puntuaciones Finales",
+            closeButton: "Cerrar",
+            answerLabel: "Respuesta:",
+            pointsLabel: "puntos",
+            getHintButton: "✨ Pista Inteligente",
+            getExplanationButton: "✨ Explicación Adicional",
+            hintLabel: "Pista:",
+            explanationLabel: "Explicación:",
+            topicValidationError: "Por favor, introduce un tema principal o define los temas para las categorías.",
+        };
+        let currentTranslations = { ...uiTextElements };
+
+        // Game State
+        let teams = [];
+        let currentTeamIndex = 0;
+        let gameData = []; 
+        let currentQuestion = null;
+        let currentPoints = 0;
+
+        // DOM Elements
+        const setupScreen = document.getElementById('setupScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const numTeamsInput = document.getElementById('numTeams');
+        
+        const singleTopicModeRadio = document.getElementById('singleTopicMode');
+        const multipleTopicsModeRadio = document.getElementById('multipleTopicsMode');
+        const singleTopicContainer = document.getElementById('singleTopicContainer');
+        const multipleTopicsContainer = document.getElementById('multipleTopicsContainer');
+        const gameTopicInput = document.getElementById('gameTopic'); // Single topic input
+        const categoryTopicInputs = [
+            document.getElementById('categoryTopic1'),
+            document.getElementById('categoryTopic2'),
+            document.getElementById('categoryTopic3'),
+            document.getElementById('categoryTopic4'),
+            document.getElementById('categoryTopic5'),
+        ];
+
+        const eduLevelInput = document.getElementById('eduLevel');
+        const uiLanguageSelect = document.getElementById('uiLanguage');
+        const otherLanguageInputContainer = document.getElementById('otherLanguageInputContainer');
+        const otherUiLanguageInput = document.getElementById('otherUiLanguage');
+        const translateOtherUiLangButton = document.getElementById('translateOtherUiLangButton');
+        const aiLanguageInput = document.getElementById('aiLanguage');
+        const startGameButton = document.getElementById('startGameButton');
+        const scoreboard = document.getElementById('scoreboard');
+        const teamScoresContainer = document.getElementById('teamScoresContainer');
+        const currentTeamDisplay = document.getElementById('currentTeamDisplay');
+        const gameBoard = document.getElementById('gameBoard');
+        const questionModal = document.getElementById('questionModal');
+        const questionText = document.getElementById('questionText');
+        const answerText = document.getElementById('answerText');
+        const showAnswerButton = document.getElementById('showAnswerButton');
+        const correctButton = document.getElementById('correctButton');
+        const incorrectButton = document.getElementById('incorrectButton');
+        const closeModalButton = document.getElementById('closeModalButton');
+        const themeToggle = document.getElementById('themeToggle');
+        const fullscreenToggle = document.getElementById('fullscreenToggle');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const getHintButton = document.getElementById('getHintButton');
+        const hintContainer = document.getElementById('hintContainer');
+        const getExplanationButton = document.getElementById('getExplanationButton');
+        const explanationContainer = document.getElementById('explanationContainer');
+
+        // Event listeners for topic mode change
+        singleTopicModeRadio.addEventListener('change', () => {
+            if (singleTopicModeRadio.checked) {
+                singleTopicContainer.style.display = 'block';
+                multipleTopicsContainer.style.display = 'none';
+            }
+        });
+        multipleTopicsModeRadio.addEventListener('change', () => {
+            if (multipleTopicsModeRadio.checked) {
+                singleTopicContainer.style.display = 'none';
+                multipleTopicsContainer.style.display = 'block';
+            }
+        });
+
+
+        // --- Firebase Initialization and Auth ---
+        async function initializeFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase config is missing. App may not work correctly with persistence.");
+                userId = crypto.randomUUID(); 
+                await setInitialLanguage(); 
+                return;
+            }
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('debug'); 
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("User is signed in with UID:", userId);
+                        await loadPreferencesAndSetLanguage(); 
+                    } else {
+                        console.log("User is not signed in. Attempting to sign in.");
+                        try {
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch (signInError) {
+                            console.error("Error during sign-in:", signInError);
+                            userId = crypto.randomUUID(); 
+                            await loadPreferencesAndSetLanguage();
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization error:", error);
+                userId = crypto.randomUUID(); 
+                await loadPreferencesAndSetLanguage();
+            }
+        }
+        
+        async function loadPreferencesAndSetLanguage() {
+            const savedLang = await loadPreferences();
+            await setInitialLanguage(savedLang); 
+        }
+
+
+        // --- AI Communication ---
+        async function callGeminiAPI(prompt, isJsonOutput = false) {
+            showLoading(currentTranslations.loadingMessage || "Cargando...");
+            const apiKey = ""; // Provided by environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+            };
+
+            if (isJsonOutput) {
+                payload.generationConfig = {
+                    responseMimeType: "application/json",
+                };
+            }
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    console.error("Gemini API error response:", errorBody);
+                    hideLoading();
+                    return { error: true, message: `API request failed with status ${response.status}: ${errorBody}` };
+                }
+                const result = await response.json();
+                hideLoading(); 
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const textData = result.candidates[0].content.parts[0].text;
+                    return textData;
+                } else {
+                    console.error("Unexpected API response structure:", result);
+                     return { error: true, message: currentTranslations.translationError || "Error in API response structure." };
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                hideLoading();
+                return { error: true, message: error.message };
+            }
+        }
+
+        async function generateQuestions(mainTopicOrTopicsArray, level, language) {
+            eduLevelForAI = level; // Store for AI context
+            langAIForAI = language; // Store for AI context
+
+            let prompt;
+            if (Array.isArray(mainTopicOrTopicsArray)) {
+                gameTopicForAI = mainTopicOrTopicsArray.filter(t => t.trim() !== '').join(', '); // Use joined topics for general context
+                const [topic1, topic2, topic3, topic4, topic5] = mainTopicOrTopicsArray;
+                prompt = `
+                    Eres un asistente experto en crear juegos de Jeopardy.
+                    Genera un juego de Jeopardy con las siguientes 5 categorías EXACTAS (si un tema está vacío o es genérico como "Variado X", crea preguntas sobre un tema popular y educativo adecuado para el nivel "${level}"):
+                    1. "${topic1 || 'Variado 1'}"
+                    2. "${topic2 || 'Variado 2'}"
+                    3. "${topic3 || 'Variado 3'}"
+                    4. "${topic4 || 'Variado 4'}"
+                    5. "${topic5 || 'Variado 5'}"
+
+                    Para cada una de estas categorías, crea 5 preguntas con sus respectivas respuestas. La dificultad de las preguntas debe escalar con los puntos: 100 (más fácil), 200, 300, 400, 500 (más difícil).
+                    Asegúrate de que las preguntas sean únicas y variadas para esta sesión de juego.
+                    El idioma para las preguntas y respuestas debe ser: ${language}.
+
+                    Devuelve la respuesta EXCLUSIVAMENTE en formato JSON, sin ningún texto introductorio o explicaciones adicionales.
+                    El JSON debe ser un array de objetos, donde cada objeto representa una categoría y tiene las siguientes propiedades:
+                    - "categoryName": string (debe ser exactamente el nombre de la categoría proporcionado arriba, ej: "${topic1 || 'Variado 1'}")
+                    - "questions": array de objetos, cada uno con:
+                        - "id": string (identificador único, ej: "cat0_q0")
+                        - "text": string (texto de la pregunta en el idioma ${language})
+                        - "answer": string (texto de la respuesta en el idioma ${language})
+                        - "points": number (100, 200, 300, 400, o 500)
+                        - "answered": boolean (inicialmente false)
+                `;
+            } else {
+                gameTopicForAI = mainTopicOrTopicsArray; // Store for AI context
+                prompt = `
+                    Eres un asistente experto en crear juegos de Jeopardy.
+                    Genera 5 categorías de preguntas para un juego de Jeopardy sobre el tema "${mainTopicOrTopicsArray}" para un nivel educativo de "${level}".
+                    Para cada categoría, crea 5 preguntas con sus respectivas respuestas. La dificultad de las preguntas debe escalar con los puntos: 100 (más fácil), 200, 300, 400, 500 (más difícil).
+                    Asegúrate de que las preguntas sean únicas y variadas para esta sesión de juego.
+                    El idioma para las preguntas y respuestas debe ser: ${language}.
+
+                    Devuelve la respuesta EXCLUSIVAMENTE en formato JSON, sin ningún texto introductorio o explicaciones adicionales.
+                    El JSON debe ser un array de objetos, donde cada objeto representa una categoría y tiene las siguientes propiedades:
+                    - "categoryName": string (nombre de la categoría en el idioma ${language})
+                    - "questions": array de objetos, cada uno con:
+                        - "id": string (identificador único, ej: "cat0_q0")
+                        - "text": string (texto de la pregunta en el idioma ${language})
+                        - "answer": string (texto de la respuesta en el idioma ${language})
+                        - "points": number (100, 200, 300, 400, o 500)
+                        - "answered": boolean (inicialmente false)
+                `;
+            }
+            
+            const apiResult = await callGeminiAPI(prompt, true);
+            if (apiResult && !apiResult.error) {
+                try {
+                    return JSON.parse(apiResult);
+                } catch (e) {
+                    console.error("Error parsing Q&A JSON:", e, "Raw string:", apiResult);
+                    return null; 
+                }
+            } else {
+                console.error("Failed to generate questions:", apiResult?.message);
+                return null;
+            }
+        }
+        
+        async function translateUIText(textsToTranslate, targetLanguage) {
+            const prompt = `
+                Traduce los siguientes textos de la interfaz de usuario al idioma "${targetLanguage}".
+                Los textos originales están en español. Devuelve un objeto JSON donde las claves sean las mismas que las proporcionadas y los valores sean los textos traducidos.
+                Si no estás seguro de una traducción para un término técnico o nombre propio, mantenlo lo más cercano posible al original o usa una transliteración común.
+                Textos a traducir:
+                ${JSON.stringify(textsToTranslate, null, 2)}
+
+                Responde EXCLUSIVAMENTE con el objeto JSON traducido, sin ningún texto introductorio o explicaciones.
+            `;
+            const apiResult = await callGeminiAPI(prompt, true);
+            if (apiResult && !apiResult.error) {
+                try {
+                    return JSON.parse(apiResult);
+                } catch (e) {
+                    console.error("Error parsing translation JSON:", e, "Raw string:", apiResult);
+                    return null;
+                }
+            } else {
+                 console.error("Failed to translate UI:", apiResult?.message);
+                 return null;
+            }
+        }
+
+        async function generateHintForQuestion(question, answer, language) {
+            const prompt = `
+                Eres un asistente de juego de Jeopardy. Proporciona una pista útil y concisa para la siguiente pregunta.
+                La pista NO debe revelar la respuesta directamente, pero debe guiar al jugador.
+                La pregunta es para un juego sobre "${gameTopicForAI}" dirigido a un nivel educativo "${eduLevelForAI}".
+                
+                Pregunta: "${question}"
+                Respuesta (NO la reveles en la pista): "${answer}"
+                Idioma para la pista: ${language}.
+
+                Devuelve SOLO la pista, sin texto introductorio.
+            `;
+            const apiResult = await callGeminiAPI(prompt);
+            if (apiResult && !apiResult.error) {
+                return apiResult;
+            } else {
+                console.error("Failed to generate hint:", apiResult?.message);
+                return currentTranslations.translationError || "Error al generar pista.";
+            }
+        }
+
+        async function generateExplanationForAnswer(question, answer, language) {
+            const prompt = `
+                Eres un asistente educativo. Proporciona una explicación breve e interesante o un dato curioso relacionado con la siguiente pregunta y su respuesta.
+                La explicación es para un juego sobre "${gameTopicForAI}" dirigido a un nivel educativo "${eduLevelForAI}".
+
+                Pregunta: "${question}"
+                Respuesta: "${answer}"
+                Idioma para la explicación: ${language}.
+
+                Devuelve SOLO la explicación, sin texto introductorio.
+            `;
+             const apiResult = await callGeminiAPI(prompt);
+            if (apiResult && !apiResult.error) {
+                return apiResult;
+            } else {
+                console.error("Failed to generate explanation:", apiResult?.message);
+                return currentTranslations.translationError || "Error al generar explicación.";
+            }
+        }
+
+
+        // --- UI Updates & Language ---
+        function applyTranslations() {
+            document.querySelectorAll('[data-translate-key]').forEach(el => {
+                const key = el.dataset.translateKey;
+                if (currentTranslations[key]) {
+                    if (el.tagName === 'INPUT' && el.placeholder) {
+                        el.placeholder = currentTranslations[key];
+                    } else if (el.tagName === 'LABEL' && el.htmlFor && key === 'categoryTopicLabelPrefix') {
+                        // Special handling for category topic labels
+                        const number = el.htmlFor.slice(-1);
+                        el.childNodes[0].nodeValue = `${currentTranslations[key]} ${number}: `;
+                    }
+                    else {
+                        el.textContent = currentTranslations[key];
+                    }
+                }
+            });
+            if (teams.length > 0 && currentTranslations.teamLabel) { 
+                 currentTeamDisplay.textContent = `${currentTranslations.teamLabel} ${teams[currentTeamIndex].name}`;
+            } else if (teams.length > 0) {
+                 currentTeamDisplay.textContent = `Equipo ${teams[currentTeamIndex].name}`; 
+            }
+            updateThemeToggleButton();
+            updateFullscreenButtonText();
+        }
+
+        async function handleLanguageChange(newLang) {
+            if (newLang === "other") {
+                otherLanguageInputContainer.style.display = 'block';
+                return; 
+            }
+            otherLanguageInputContainer.style.display = 'none';
+
+            if (newLang === "es") { 
+                currentTranslations = { ...uiTextElements };
+            } else {
+                const translations = await translateUIText(uiTextElements, newLang);
+                if (translations) {
+                    currentTranslations = { ...uiTextElements, ...translations }; 
+                } else {
+                    console.warn(`Translation to ${newLang} failed. Reverting to previous or Spanish.`);
+                    if (uiLanguageSelect.value !== 'es') { 
+                        currentTranslations = { ...uiTextElements }; 
+                        uiLanguageSelect.value = 'es'; 
+                    }
+                }
+            }
+            applyTranslations();
+            await savePreferences();
+        }
+
+        uiLanguageSelect.addEventListener('change', (e) => {
+            handleLanguageChange(e.target.value);
+        });
+
+        translateOtherUiLangButton.addEventListener('click', async () => {
+            const customLang = otherUiLanguageInput.value.trim();
+            if (customLang) {
+                await handleLanguageChange(customLang); 
+            }
+        });
+        
+        async function setInitialLanguage(loadedLang = null) {
+            let targetLang = 'es'; 
+
+            if (loadedLang) { 
+                targetLang = loadedLang;
+            } else { 
+                const browserLang = navigator.language.split('-')[0];
+                if (browserLang !== 'es') { 
+                    const predefinedLangs = ['ca', 'gl', 'eu', 'en'];
+                    if (predefinedLangs.includes(browserLang)) {
+                        targetLang = browserLang;
+                    } else {
+                        targetLang = browserLang; 
+                    }
+                }
+            }
+            
+            if (Array.from(uiLanguageSelect.options).some(opt => opt.value === targetLang)) {
+                uiLanguageSelect.value = targetLang;
+            } else if (targetLang !== 'es') { 
+                uiLanguageSelect.value = 'other';
+                otherUiLanguageInput.value = targetLang;
+                otherLanguageInputContainer.style.display = 'block';
+            }
+
+            if (targetLang === 'es') {
+                currentTranslations = { ...uiTextElements };
+                applyTranslations();
+            } else {
+                await handleLanguageChange(targetLang); 
+            }
+        }
+
+
+        // --- Theme Management ---
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.body.classList.remove('light');
+                document.body.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.body.classList.remove('light'); 
+                document.body.classList.add('light');
+            }
+            try {
+                localStorage.setItem('theme', theme); 
+            } catch(e) {
+                console.warn("Could not save theme to localStorage:", e);
+            }
+            updateThemeToggleButton();
+        }
+        
+        function updateThemeToggleButton() {
+            const isDark = document.documentElement.classList.contains('dark');
+            themeToggle.textContent = isDark ? '☀️' : '🌓';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+            applyTheme(currentTheme);
+        });
+
+        function setInitialTheme() {
+            let preferredTheme = 'light'; 
+            try {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme) {
+                    preferredTheme = savedTheme;
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    preferredTheme = 'dark';
+                }
+            } catch(e) {
+                console.warn("Could not access localStorage for theme:", e);
+                 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    preferredTheme = 'dark';
+                }
+            }
+            applyTheme(preferredTheme);
+        }
+
+        // --- Fullscreen ---
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.warn(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+        
+        function updateFullscreenButtonText() {
+            if (document.fullscreenElement) {
+                fullscreenToggle.textContent = currentTranslations.exitFullscreenButton || "Salir de Pantalla Completa";
+            } else {
+                fullscreenToggle.textContent = currentTranslations.fullscreenButton || "Pantalla Completa";
+            }
+        }
+
+        fullscreenToggle.addEventListener('click', toggleFullscreen);
+        document.addEventListener('fullscreenchange', updateFullscreenButtonText);
+
+
+        // --- Game Logic ---
+        startGameButton.addEventListener('click', async () => {
+            const num = parseInt(numTeamsInput.value);
+            const level = eduLevelInput.value.trim();
+            const langAI = aiLanguageInput.value.trim() || 'español';
+            let topicData;
+            let validTopics = true;
+
+            if (singleTopicModeRadio.checked) {
+                topicData = gameTopicInput.value.trim();
+                if (!topicData) {
+                    validTopics = false;
+                }
+            } else {
+                topicData = categoryTopicInputs.map(input => input.value.trim());
+                // For multiple topics, we allow some to be empty, AI will use fallbacks.
+                // But at least one should ideally be filled if this mode is chosen.
+                // For now, we'll let it proceed even if all are empty, relying on AI fallbacks.
+                // A stricter validation could be: if (topicData.every(t => t === '')) validTopics = false;
+            }
+
+            if (!validTopics) { 
+                console.warn(currentTranslations.topicValidationError || "Por favor, introduce un tema."); 
+                // Optionally, display this message in the UI, not just console.
+                const errorDisplay = document.getElementById('topicErrorDisplay'); // Assume you add an element for this
+                if (errorDisplay) errorDisplay.textContent = currentTranslations.topicValidationError;
+                return; 
+            }
+            if (num < 2 || num > 5) { console.warn("Número de equipos debe ser entre 2 y 5."); return; }
+            if (!level) { console.warn("Por favor, introduce un nivel educativo."); return; }
+
+            teams = [];
+            for (let i = 0; i < num; i++) {
+                teams.push({ name: `${currentTranslations.teamLabel || "Equipo"} ${i + 1}`, score: 0 });
+            }
+            currentTeamIndex = 0;
+
+            gameData = await generateQuestions(topicData, level, langAI);
+            if (!gameData || gameData.length === 0) {
+                console.error(currentTranslations.questionGenerationError || "No se pudieron generar las preguntas.");
+                const gameBoardMessage = document.createElement('p');
+                gameBoardMessage.textContent = currentTranslations.questionGenerationError || "Error al generar preguntas. Intenta con otro tema o nivel.";
+                gameBoardMessage.className = "text-red-500 text-center p-4 col-span-full"; // Ensure it spans if grid is already set
+                gameBoard.innerHTML = ''; 
+                gameBoard.appendChild(gameBoardMessage);
+                return;
+            }
+            
+            setupScreen.style.display = 'none';
+            gameScreen.style.display = 'block';
+            renderGameBoard();
+            updateScoreboard();
+        });
+
+        function renderGameBoard() {
+            gameBoard.innerHTML = '';
+            const numCategories = Array.isArray(gameData) ? gameData.length : 5; 
+            gameBoard.className = `grid grid-cols-${Math.max(1, numCategories)} gap-2 md:gap-4`;
+
+
+            if (!Array.isArray(gameData)) {
+                console.error("gameData is not an array:", gameData);
+                const errorMsg = document.createElement('p');
+                errorMsg.textContent = "Error: No se pudieron cargar las categorías del juego.";
+                errorMsg.className = "text-red-500 dark:text-red-400 col-span-full text-center p-4";
+                gameBoard.appendChild(errorMsg);
+                return;
+            }
+
+
+            gameData.forEach((category, catIndex) => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'flex flex-col space-y-2 md:space-y-4';
+                
+                const categoryTitle = document.createElement('h4');
+                categoryTitle.className = 'category-title text-center p-2 bg-blue-500 dark:bg-blue-700 text-white rounded-md shadow';
+                categoryTitle.textContent = category.categoryName || `Categoría ${catIndex + 1}`; 
+                categoryDiv.appendChild(categoryTitle);
+
+                if (!Array.isArray(category.questions)) {
+                    console.error(`Questions for category ${catIndex} is not an array:`, category.questions);
+                    const qErrorMsg = document.createElement('p');
+                    qErrorMsg.textContent = "Error al cargar preguntas para esta categoría.";
+                    qErrorMsg.className = "text-red-500 dark:text-red-400 p-2";
+                    categoryDiv.appendChild(qErrorMsg);
+                    return; 
+                }
+
+
+                category.questions.sort((a,b) => (a.points || 0) - (b.points || 0)).forEach((q, qIndex) => {
+                    const button = document.createElement('button');
+                    button.className = 'jeopardy-button w-full p-3 md:p-4 bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white font-bold rounded-md shadow-md';
+                    button.textContent = q.points || "?"; 
+                    button.dataset.catIndex = catIndex;
+                    button.dataset.qIndex = qIndex; 
+                    button.disabled = q.answered;
+                    if (q.answered) {
+                        button.classList.add('opacity-50', 'cursor-not-allowed');
+                        button.classList.remove('hover:bg-indigo-600');
+                    }
+                    button.addEventListener('click', handleQuestionClick);
+                    categoryDiv.appendChild(button);
+                });
+                gameBoard.appendChild(categoryDiv);
+            });
+        }
+
+        function handleQuestionClick(event) {
+            const catIndex = event.target.dataset.catIndex;
+            const qIndex = event.target.dataset.qIndex; 
+            
+            currentQuestion = gameData[catIndex].questions[qIndex]; 
+
+
+            if (!currentQuestion) {
+                console.error("Could not find question for", catIndex, qIndex);
+                return;
+            }
+            currentPoints = currentQuestion.points;
+
+            questionText.textContent = currentQuestion.text;
+            answerText.textContent = `${currentTranslations.answerLabel || "Respuesta:"} ${currentQuestion.answer}`;
+            
+            answerText.style.display = 'none';
+            hintContainer.style.display = 'none';
+            hintContainer.textContent = '';
+            explanationContainer.style.display = 'none';
+            explanationContainer.textContent = '';
+
+            showAnswerButton.style.display = 'inline-block';
+            getHintButton.style.display = 'inline-block'; 
+            getExplanationButton.style.display = 'none'; 
+            correctButton.style.display = 'none';
+            incorrectButton.style.display = 'none';
+            
+            getHintButton.disabled = false; // Re-enable hint button for new question
+            getExplanationButton.disabled = false; // Re-enable explanation button
+
+            questionModal.style.display = 'flex';
+        }
+
+        getHintButton.addEventListener('click', async () => {
+            if (!currentQuestion) return;
+            getHintButton.disabled = true; 
+            const hint = await generateHintForQuestion(currentQuestion.text, currentQuestion.answer, langAIForAI);
+            hintContainer.innerHTML = `<strong>${currentTranslations.hintLabel || "Pista:"}</strong> ${hint}`;
+            hintContainer.style.display = 'block';
+            // Do not re-enable here, let it be usable once per question
+        });
+
+        showAnswerButton.addEventListener('click', () => {
+            answerText.style.display = 'block';
+            showAnswerButton.style.display = 'none';
+            getHintButton.style.display = 'none'; 
+            getExplanationButton.style.display = 'inline-block'; 
+            correctButton.style.display = 'inline-block';
+            incorrectButton.style.display = 'inline-block';
+        });
+
+        getExplanationButton.addEventListener('click', async () => {
+            if (!currentQuestion) return;
+            getExplanationButton.disabled = true;
+            const explanation = await generateExplanationForAnswer(currentQuestion.text, currentQuestion.answer, langAIForAI);
+            explanationContainer.innerHTML = `<strong>${currentTranslations.explanationLabel || "Explicación:"}</strong> ${explanation}`;
+            explanationContainer.style.display = 'block';
+            // Do not re-enable here, let it be usable once per question
+        });
+        
+        closeModalButton.addEventListener('click', () => {
+            questionModal.style.display = 'none';
+        });
+
+
+        function handleAnswer(isCorrect) {
+            if (!currentQuestion) return; 
+
+            if (isCorrect) {
+                teams[currentTeamIndex].score += currentPoints;
+            }
+            currentQuestion.answered = true;
+            questionModal.style.display = 'none';
+            
+            updateScoreboard();
+            renderGameBoard(); 
+            checkGameEnd();
+            
+            currentTeamIndex = (currentTeamIndex + 1) % teams.length;
+            updateScoreboard(); 
+        }
+
+        correctButton.addEventListener('click', () => handleAnswer(true));
+        incorrectButton.addEventListener('click', () => handleAnswer(false));
+
+        function updateScoreboard() {
+            teamScoresContainer.innerHTML = '';
+            teams.forEach((team, index) => {
+                const teamDiv = document.createElement('div');
+                teamDiv.className = `p-3 rounded-md shadow score-display ${index === currentTeamIndex ? 'bg-yellow-300 dark:bg-yellow-500 font-bold ring-2 ring-yellow-500 dark:ring-yellow-300' : 'bg-white dark:bg-gray-600'}`;
+                teamDiv.textContent = `${team.name}: ${team.score} ${currentTranslations.pointsLabel || "puntos"}`;
+                teamScoresContainer.appendChild(teamDiv);
+            });
+            if (teams.length > 0 && teams[currentTeamIndex]) { 
+                 currentTeamDisplay.textContent = `${teams[currentTeamIndex].name}`;
+            }
+        }
+        
+        function checkGameEnd() {
+            if (!Array.isArray(gameData) || gameData.length === 0) return; 
+
+            const allAnswered = gameData.every(cat => 
+                Array.isArray(cat.questions) && cat.questions.every(q => q.answered)
+            );
+
+            if (allAnswered) {
+                let finalMessageText = `${currentTranslations.allQuestionsAnswered || "¡Todas las preguntas han sido respondidas! Juego terminado."}\n\n${currentTranslations.finalScores || "Puntuaciones Finales"}:\n`;
+                teams.sort((a,b) => b.score - a.score).forEach(team => {
+                    finalMessageText += `${team.name}: ${team.score} ${currentTranslations.pointsLabel || "puntos"}\n`;
+                });
+                
+                const endMessageDiv = document.createElement('div');
+                endMessageDiv.className = "fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4";
+                endMessageDiv.innerHTML = `<div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl text-center max-w-md w-full">
+                                            <h2 class="text-2xl font-bold mb-4">${currentTranslations.finalScores || "Puntuaciones Finales"}</h2>
+                                            <pre class="whitespace-pre-wrap text-left">${teams.map(t => `${t.name}: ${t.score} ${currentTranslations.pointsLabel || "puntos"}`).join('\n')}</pre>
+                                            <button onclick="this.parentElement.parentElement.remove(); location.reload();" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">OK & Reiniciar</button>
+                                          </div>`; 
+                document.body.appendChild(endMessageDiv);
+            }
+        }
+
+        // --- Preferences (Firestore / LocalStorage Fallback) ---
+        async function savePreferences() {
+            if (!userId) { 
+                console.warn("Cannot save preferences: userId is not set.");
+                return;
+            }
+            const prefs = {
+                uiLanguage: uiLanguageSelect.value === 'other' ? otherUiLanguageInput.value.trim() : uiLanguageSelect.value,
+            };
+            const prefPath = `artifacts/${appId}/users/${userId}/jeopardyPreferences/settings`; 
+            console.log("Attempting to save preferences to:", prefPath);
+
+            if (db) { 
+                try {
+                    const prefDocRef = doc(db, prefPath);
+                    await setDoc(prefDocRef, prefs);
+                    console.log("Preferences saved to Firestore.");
+                } catch (error) {
+                    console.error("Error saving preferences to Firestore:", error);
+                    try { localStorage.setItem(`jeopardyAiPrefs_${userId}`, JSON.stringify(prefs)); } catch(e) {console.warn("LS save failed", e)}
+                }
+            } else {
+                try { localStorage.setItem(`jeopardyAiPrefs_${userId}`, JSON.stringify(prefs)); } catch(e) {console.warn("LS save failed (no db)", e)}
+                console.log("Preferences saved to localStorage (Firebase not available or error).");
+            }
+        }
+
+        async function loadPreferences() {
+            if (!userId) { 
+                console.warn("Cannot load preferences: userId is not set.");
+                return null;
+            }
+            let prefs = null;
+            const prefPath = `artifacts/${appId}/users/${userId}/jeopardyPreferences/settings`; 
+            console.log("Attempting to load preferences from:", prefPath);
+
+            if (db) {
+                try {
+                    const prefDocRef = doc(db, prefPath);
+                    const docSnap = await getDoc(prefDocRef);
+                    if (docSnap.exists()) {
+                        prefs = docSnap.data();
+                        console.log("Preferences loaded from Firestore:", prefs);
+                    } else {
+                        console.log("No preferences document found in Firestore for this user.");
+                    }
+                } catch (error) {
+                    console.error("Error loading preferences from Firestore:", error);
+                }
+            }
+            
+            if (!prefs) { 
+                try {
+                    const localPrefs = localStorage.getItem(`jeopardyAiPrefs_${userId}`);
+                    if (localPrefs) {
+                        prefs = JSON.parse(localPrefs);
+                        console.log("Preferences loaded from localStorage.");
+                    }
+                } catch (e) {
+                    console.warn("Could not load prefs from LS", e);
+                }
+            }
+
+            return prefs ? prefs.uiLanguage : null;
+        }
+
+        function showLoading(message) {
+            const loadingMessageEl = loadingOverlay.querySelector('p');
+            if (loadingMessageEl) loadingMessageEl.textContent = message;
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+
+
+        // --- Initial Setup ---
+        async function initApp() {
+            setInitialTheme(); 
+            await initializeFirebase(); 
+            applyTranslations(); // Apply translations once after init
+        }
+        
+        initApp();
+
+    </script>
+</body>
+</html>
