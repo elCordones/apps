@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor de Imágenes Local</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .drag-area {
+            border: 2px dashed #cbd5e1;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+        .drag-area.active {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        /* Dark mode styles */
+        .dark .drag-area {
+            border-color: #4b5563;
+        }
+        .dark .drag-area.active {
+            border-color: #3b82f6;
+            background-color: #1f2937;
+        }
+        .dark select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+        }
+        .thumbnail-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.5rem;
+        }
+        .thumbnail-item .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 4px;
+            font-size: 0.75rem;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: opacity 0.3s;
+        }
+    </style>
+    <!-- Librerías para HEIC y ZIP -->
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-300">
+
+    <main class="w-full max-w-4xl bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 md:p-8">
+        <!-- Header for settings -->
+        <header class="flex justify-end items-center gap-4 mb-4 -mt-2">
+            <div>
+                <label for="themeSelect" class="sr-only">Tema</label>
+                <select id="themeSelect" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md py-1 pl-2 pr-8 text-sm border border-transparent focus:ring-2 focus:ring-blue-500">
+                    <option value="system" data-translate="theme_system">Sistema</option>
+                    <option value="light" data-translate="theme_light">Claro</option>
+                    <option value="dark" data-translate="theme_dark">Oscuro</option>
+                </select>
+            </div>
+             <div>
+                <label for="langSelect" class="sr-only">Idioma</label>
+                <select id="langSelect" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md py-1 pl-2 pr-8 text-sm border border-transparent focus:ring-2 focus:ring-blue-500">
+                    <option value="ca">Català</option>
+                    <option value="es">Español</option>
+                    <option value="en">English</option>
+                    <option value="gl">Galego</option>
+                    <option value="eu">Euskara</option>
+                </select>
+            </div>
+        </header>
+
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100" data-translate="main_title">Conversor de Imágenes Local</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-2" data-translate="subtitle">Convierte formatos de imagen de forma segura y privada en tu propio navegador.</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Columna de Carga y Vista Previa -->
+            <div class="flex flex-col">
+                 <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-200" data-translate="step1_title">1. Sube tus imágenes</h2>
+                    <button id="clearBtn" class="hidden text-sm text-blue-600 dark:text-blue-400 hover:underline" data-translate="clear_button">Limpiar todo</button>
+                </div>
+                <div id="dragArea" class="drag-area w-full h-96 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer bg-slate-50 dark:bg-slate-700/50">
+                    <svg class="w-12 h-12 text-slate-400 dark:text-slate-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <p class="text-slate-600 dark:text-slate-300" data-translate="upload_prompt_multi">Arrastra y suelta imágenes aquí</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1" data-translate="upload_prompt_alt">o haz clic para seleccionar</p>
+                    <input type="file" id="fileInput" class="hidden" accept="image/*,.heic,.heif" multiple>
+                </div>
+                <div id="previewContainer" class="hidden w-full h-96 bg-slate-100 dark:bg-slate-700/50 rounded-lg overflow-y-auto p-4">
+                    <div id="previewGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- Las miniaturas se insertarán aquí -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna de Configuración y Descarga -->
+            <div id="controlsContainer" class="flex flex-col space-y-6 opacity-50 pointer-events-none">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-3" data-translate="step2_title">2. Elige el formato de salida</h2>
+                    <select id="formatSelect" class="w-full py-3 pl-3 pr-10 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        <option value="jpeg">JPEG</option>
+                        <option value="png" selected>PNG</option>
+                        <option value="webp">WEBP</option>
+                        <option value="gif">GIF</option>
+                    </select>
+                </div>
+
+                <div id="qualityContainer">
+                    <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-3" data-translate="step3_title">3. Ajusta la compresión</h2>
+                     <div class="flex items-center space-x-4">
+                        <input type="range" id="qualitySlider" min="1" max="100" value="90" class="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer">
+                        <span id="qualityValue" class="font-medium text-slate-600 dark:text-slate-300 w-12 text-center">90%</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-3" data-translate="step4_title">4. Nombra el archivo ZIP</h2>
+                    <input type="text" id="fileNameInput" class="w-full p-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" data-translate-placeholder="filename_placeholder_zip">
+                </div>
+
+                <div class="pt-4">
+                    <div class="text-center text-sm text-slate-500 dark:text-slate-400 h-5 mb-2">
+                        <span id="estimationText"></span>
+                    </div>
+                    <button id="convertBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105" data-translate="convert_button_zip">
+                        Convertir y Descargar (.zip)
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="message" class="mt-6 text-center text-sm font-medium h-5"></div>
+    </main>
+    
+    <!-- Pie de página con Licencia y Atribución -->
+    <footer class="text-center p-4 mt-2">
+        <p class="text-sm text-slate-500 dark:text-slate-400">© David Cordones 2025</p>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">
+            <a href="LICENSE.txt" target="_blank" class="hover:underline">Licencia del código: AGPL v3</a> · 
+            <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer" class="hover:underline">Contenido: CC BY-SA 4.0</a>
+        </p>
+    </footer>
+
+<script>
+    /*
+     * Conversor de Imágenes Local
+     * Copyright (C) 2025 David Cordones
+     *
+     * Este programa es software libre: usted puede redistribuirlo y/o modificarlo
+     * bajo los términos de la Licencia Pública General Affero de GNU, tal como está
+     * publicada por la Free Software Foundation, ya sea la versión 3 de la Licencia,
+     * o (a su elección) cualquier versión posterior.
+     *
+     * Este programa se distribuye con la esperanza de que sea útil, pero SIN NINGUNA
+     * GARANTÍA; sin siquiera la garantía implícita de COMERCIABILIDAD o IDONEIDAD
+     * PARA UN PROPÓSITO PARTICULAR. Consulte la Licencia Pública General Affero de GNU
+     * para más detalles.
+     *
+     * Debería haber recibido una copia de la Licencia Pública General Affero de GNU
+     * junto con este programa. Si no es así, consulte <https://www.gnu.org/licenses/>.
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- ELEMENTOS DEL DOM ---
+        const dragArea = document.getElementById('dragArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewGrid = document.getElementById('previewGrid');
+        const controlsContainer = document.getElementById('controlsContainer');
+        const formatSelect = document.getElementById('formatSelect');
+        const qualityContainer = document.getElementById('qualityContainer');
+        const qualitySlider = document.getElementById('qualitySlider');
+        const qualityValue = document.getElementById('qualityValue');
+        const fileNameInput = document.getElementById('fileNameInput');
+        const convertBtn = document.getElementById('convertBtn');
+        const messageEl = document.getElementById('message');
+        const themeSelect = document.getElementById('themeSelect');
+        const langSelect = document.getElementById('langSelect');
+        const clearBtn = document.getElementById('clearBtn');
+        const estimationText = document.getElementById('estimationText');
+
+        let uploadedFiles = [];
+
+        // --- TRADUCCIONES ---
+        const translations = {
+            en: {
+                main_title: "Local Image Converter",
+                subtitle: "Convert image formats securely and privately in your browser.",
+                step1_title: "1. Upload your images",
+                upload_prompt_multi: "Drag and drop images here",
+                upload_prompt_alt: "or click to select",
+                clear_button: "Clear all",
+                step2_title: "2. Choose output format",
+                step3_title: "3. Adjust compression",
+                step4_title: "4. Name the ZIP file",
+                filename_placeholder_zip: "converted-images",
+                convert_button_zip: "Convert and Download (.zip)",
+                theme_system: "System",
+                theme_light: "Light",
+                theme_dark: "Dark",
+                msg_files_loaded: "{count} images loaded. Ready to convert!",
+                msg_error_process: "There was an error processing an image.",
+                msg_error_upload: "Please, upload one or more images first.",
+                msg_converted: "Conversion complete! Downloading ZIP...",
+                msg_converting_heic: "Converting HEIC... This might take a moment.",
+                msg_error_heic: "Error converting HEIC file.",
+                msg_processing: "Processing images...",
+                estimating: "Estimating size...",
+                estimated_size: "Estimated total size: {size}",
+            },
+            es: {
+                main_title: "Conversor de Imágenes Local",
+                subtitle: "Convierte formatos de imagen de forma segura y privada en tu propio navegador.",
+                step1_title: "1. Sube tus imágenes",
+                upload_prompt_multi: "Arrastra y suelta imágenes aquí",
+                upload_prompt_alt: "o haz clic para seleccionar",
+                clear_button: "Limpiar todo",
+                step2_title: "2. Elige el formato de salida",
+                step3_title: "3. Ajusta la compresión",
+                step4_title: "4. Nombra el archivo ZIP",
+                filename_placeholder_zip: "imagenes-convertidas",
+                convert_button_zip: "Convertir y Descargar (.zip)",
+                theme_system: "Sistema",
+                theme_light: "Claro",
+                theme_dark: "Oscuro",
+                msg_files_loaded: "¡{count} imágenes cargadas! Listas para convertir.",
+                msg_error_process: "Hubo un error al procesar una imagen.",
+                msg_error_upload: "Por favor, sube una o más imágenes primero.",
+                msg_converted: "¡Conversión completada! Descargando ZIP...",
+                msg_converting_heic: "Convirtiendo HEIC... Esto puede tardar un momento.",
+                msg_error_heic: "Error al convertir el archivo HEIC.",
+                msg_processing: "Procesando imágenes...",
+                estimating: "Estimando tamaño...",
+                estimated_size: "Tamaño total estimado: {size}",
+            },
+            ca: {
+                main_title: "Conversor d'Imatges Local",
+                subtitle: "Converteix formats d'imatge de forma segura i privada al teu propi navegador.",
+                step1_title: "1. Penja les teves imatges",
+                upload_prompt_multi: "Arrossega i deixa anar imatges aquí",
+                upload_prompt_alt: "o fes clic per seleccionar",
+                clear_button: "Neteja-ho tot",
+                step2_title: "2. Tria el format de sortida",
+                step3_title: "3. Ajusta la compressió",
+                step4_title: "4. Anomena el fitxer ZIP",
+                filename_placeholder_zip: "imatges-convertides",
+                convert_button_zip: "Converteix i Descarrega (.zip)",
+                theme_system: "Sistema",
+                theme_light: "Clar",
+                theme_dark: "Fosc",
+                msg_files_loaded: "{count} imatges carregades. A punt per convertir!",
+                msg_error_process: "Hi ha hagut un error en processar una imatge.",
+                msg_error_upload: "Si us plau, puja una o més imatges primer.",
+                msg_converted: "Conversió completada! Descarregant ZIP...",
+                msg_converting_heic: "Convertint HEIC... Això pot trigar un moment.",
+                msg_error_heic: "Error en convertir el fitxer HEIC.",
+                msg_processing: "Processant imatges...",
+                estimating: "Estimant mida...",
+                estimated_size: "Mida total estimada: {size}",
+            },
+            gl: {
+                main_title: "Conversor de Imaxes Local",
+                subtitle: "Converte formatos de imaxe de forma segura e privada no teu propio navegador.",
+                step1_title: "1. Carga as túas imaxes",
+                upload_prompt_multi: "Arrastra e solta imaxes aquí",
+                upload_prompt_alt: "ou fai clic para seleccionar",
+                clear_button: "Limpar todo",
+                step2_title: "2. Elixe o formato de saída",
+                step3_title: "3. Axusta a compresión",
+                step4_title: "4. Nomea o ficheiro ZIP",
+                filename_placeholder_zip: "imaxes-convertidas",
+                convert_button_zip: "Converter e Descargar (.zip)",
+                theme_system: "Sistema",
+                theme_light: "Claro",
+                theme_dark: "Escuro",
+                msg_files_loaded: "{count} imaxes cargadas. Listas para converter!",
+                msg_error_process: "Houbo un erro ao procesar unha imaxe.",
+                msg_error_upload: "Por favor, carga unha ou máis imaxes primeiro.",
+                msg_converted: "Conversión completada! Descargando ZIP...",
+                msg_converting_heic: "Convertendo HEIC... Isto pode levar un momento.",
+                msg_error_heic: "Erro ao converter o ficheiro HEIC.",
+                msg_processing: "Procesando imaxes...",
+                estimating: "Estimando tamaño...",
+                estimated_size: "Tamaño total estimado: {size}",
+            },
+            eu: {
+                main_title: "Irudi Bihurgailu Lokala",
+                subtitle: "Bihurtu irudi formatuak modu seguruan eta pribatuan zure nabigatzailean.",
+                step1_title: "1. Igo zure irudiak",
+                upload_prompt_multi: "Arrastatu eta askatu irudiak hemen",
+                upload_prompt_alt: "edo egin klik hautatzeko",
+                clear_button: "Garbitu dena",
+                step2_title: "2. Aukeratu irteerako formatua",
+                step3_title: "3. Doitu konpresioa",
+                step4_title: "4. Izendatu ZIP fitxategia",
+                filename_placeholder_zip: "bihurtutako-irudiak",
+                convert_button_zip: "Bihurtu eta Deskargatu (.zip)",
+                theme_system: "Sistema",
+                theme_light: "Argia",
+                theme_dark: "Iluna",
+                msg_files_loaded: "{count} irudi kargatuta. Bihurtzeko prest!",
+                msg_error_process: "Errore bat gertatu da irudi bat prozesatzean.",
+                msg_error_upload: "Mesedez, igo irudi bat edo gehiago lehenik.",
+                msg_converted: "Bihurketa osatu da! ZIP deskargatzen...",
+                msg_converting_heic: "HEIC bihurtzen... Honek une bat har dezake.",
+                msg_error_heic: "Errorea HEIC fitxategia bihurtzean.",
+                msg_processing: "Irudiak prozesatzen...",
+                estimating: "Tamaina estimatzen...",
+                estimated_size: "Guztizko tamaina estimatua: {size}",
+            }
+        };
+
+        // --- UTILIDADES ---
+        const debounce = (func, delay) => {
+            let timeoutId;
+            return (...args) => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    func.apply(this, args);
+                }, delay);
+            };
+        };
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // --- LÓGICA DE ESTIMACIÓN DE TAMAÑO ---
+        let lastEstimatedSize = 0;
+        const updateEstimatedSize = async () => {
+            if (uploadedFiles.length === 0) {
+                estimationText.textContent = '';
+                return;
+            }
+            
+            const currentLang = document.documentElement.lang || 'es';
+            estimationText.textContent = translations[currentLang].estimating || 'Estimando...';
+
+            try {
+                const sampleBlob = await convertFile(uploadedFiles[0]);
+                if (sampleBlob) {
+                    const totalSize = sampleBlob.size * uploadedFiles.length;
+                    lastEstimatedSize = totalSize;
+                    const formattedSize = formatBytes(totalSize);
+                    const msgTemplate = translations[currentLang].estimated_size || 'Tamaño total estimado: {size}';
+                    estimationText.textContent = msgTemplate.replace('{size}', formattedSize);
+                }
+            } catch (error) {
+                console.error("Error estimating size:", error);
+                estimationText.textContent = '';
+            }
+        };
+        const debouncedEstimate = debounce(updateEstimatedSize, 250);
+
+        // --- LÓGICA DE INTERNACIONALIZACIÓN (i18n) ---
+        const setLanguage = (lang) => {
+            document.documentElement.lang = lang;
+            localStorage.setItem('language', lang);
+            langSelect.value = lang;
+            
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                el.textContent = (translations[lang] && translations[lang][key]) || translations['es'][key];
+            });
+
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                el.placeholder = (translations[lang] && translations[lang][key]) || translations['es'][key];
+            });
+             updateEstimatedSize(); // Re-render estimation text with new language
+        };
+
+        // --- LÓGICA DE TEMA ---
+        const setTheme = (theme) => {
+            const effectiveTheme = theme === 'system' 
+                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : theme;
+
+            if (effectiveTheme === 'dark') document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+            
+            localStorage.setItem('theme', theme);
+            themeSelect.value = theme;
+        };
+        
+        // --- INICIALIZACIÓN ---
+        const init = () => {
+            const savedTheme = localStorage.getItem('theme') || 'system';
+            setTheme(savedTheme);
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (localStorage.getItem('theme') === 'system') setTheme('system');
+            });
+
+            const savedLang = localStorage.getItem('language');
+            const browserLang = (navigator.language || navigator.userLanguage).split('-')[0];
+            const defaultLang = translations[browserLang] ? browserLang : 'es';
+            setLanguage(savedLang || defaultLang);
+        };
+
+        init();
+        
+        // --- MANEJADORES DE EVENTOS ---
+        themeSelect.addEventListener('change', (e) => setTheme(e.target.value));
+        langSelect.addEventListener('change', (e) => setLanguage(e.target.value));
+        
+        dragArea.addEventListener('click', () => fileInput.click());
+        dragArea.addEventListener('dragover', (e) => { e.preventDefault(); dragArea.classList.add('active'); });
+        dragArea.addEventListener('dragleave', () => dragArea.classList.remove('active'));
+        dragArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragArea.classList.remove('active');
+            if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files) handleFiles(e.target.files);
+        });
+
+        formatSelect.addEventListener('change', () => {
+            const selectedFormat = formatSelect.value;
+            const isQualityAdjustable = selectedFormat === 'jpeg' || selectedFormat === 'webp';
+            qualityContainer.style.display = isQualityAdjustable ? 'block' : 'none';
+            updateEstimatedSize();
+        });
+
+        qualitySlider.addEventListener('input', () => {
+            qualityValue.textContent = `${qualitySlider.value}%`;
+            debouncedEstimate();
+        });
+        
+        clearBtn.addEventListener('click', resetUI);
+        convertBtn.addEventListener('click', convertAndDownloadZip);
+
+        // --- FUNCIONES PRINCIPALES ---
+        async function handleFiles(files) {
+            const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/') || /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name));
+            if (imageFiles.length === 0) return;
+
+            setupUIForPreview();
+            
+            for (const file of imageFiles) {
+                const processedFile = await processFile(file);
+                if (processedFile) {
+                    uploadedFiles.push(processedFile);
+                    createThumbnail(processedFile);
+                }
+            }
+            if (uploadedFiles.length > 0) {
+                showMessage('msg_files_loaded', 'success', { count: uploadedFiles.length });
+                updateEstimatedSize();
+            }
+        }
+
+        function processFile(file) {
+            return new Promise((resolve) => {
+                const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name);
+
+                if (isHeic) {
+                    showMessage('msg_converting_heic', 'info');
+                    heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 })
+                        .then(conversionResult => {
+                            conversionResult.name = file.name.replace(/\.(heic|heif)$/i, '.jpeg');
+                            resolve(conversionResult);
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            showMessage('msg_error_heic', 'error');
+                            resolve(null);
+                        });
+                } else {
+                    resolve(file);
+                }
+            });
+        }
+
+        function createThumbnail(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const thumbItem = document.createElement('div');
+                thumbItem.className = 'thumbnail-item aspect-square bg-white dark:bg-slate-800 flex items-center justify-center';
+                
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'max-w-full max-h-full object-contain';
+                
+                const overlay = document.createElement('div');
+                overlay.className = 'overlay';
+                overlay.textContent = file.name;
+
+                thumbItem.appendChild(img);
+                thumbItem.appendChild(overlay);
+                previewGrid.appendChild(thumbItem);
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function setupUIForPreview() {
+            previewContainer.classList.remove('hidden');
+            controlsContainer.classList.remove('opacity-50', 'pointer-events-none');
+            dragArea.classList.add('hidden');
+            clearBtn.classList.remove('hidden');
+            // Ensure quality slider visibility is correct on first load
+            formatSelect.dispatchEvent(new Event('change'));
+        }
+        
+        function resetUI() {
+            uploadedFiles = [];
+            previewGrid.innerHTML = '';
+            previewContainer.classList.add('hidden');
+            controlsContainer.classList.add('opacity-50', 'pointer-events-none');
+            dragArea.classList.remove('hidden');
+            clearBtn.classList.add('hidden');
+            fileInput.value = ''; // Restablecer el input de archivo
+            messageEl.textContent = '';
+            estimationText.textContent = '';
+        }
+
+        async function convertAndDownloadZip() {
+            if (uploadedFiles.length === 0) {
+                showMessage('msg_error_upload', 'error');
+                return;
+            }
+            
+            showMessage('msg_processing', 'info');
+            convertBtn.disabled = true;
+
+            const zip = new JSZip();
+            const format = formatSelect.value;
+
+            const conversionPromises = uploadedFiles.map(file => convertFile(file));
+
+            const convertedBlobs = await Promise.all(conversionPromises);
+
+            convertedBlobs.forEach((blob, index) => {
+                if (blob) {
+                     const originalName = uploadedFiles[index].name.split('.').slice(0, -1).join('.');
+                     zip.file(`${originalName}.${format}`, blob);
+                }
+            });
+            
+            zip.generateAsync({ type: "blob" })
+                .then(content => {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(content);
+                    const finalFileName = fileNameInput.value.trim() || fileNameInput.placeholder;
+                    link.download = `${finalFileName}.zip`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showMessage('msg_converted', 'success');
+                })
+                .catch(err => {
+                    console.error(err);
+                    showMessage('msg_error_process', 'error');
+                })
+                .finally(() => {
+                    convertBtn.disabled = false;
+                });
+        }
+
+        function convertFile(file) {
+             return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                const reader = new FileReader();
+
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+
+                    const format = formatSelect.value;
+                    const mimeType = `image/${format}`;
+                    const quality = qualitySlider.value / 100;
+
+                    canvas.toBlob(blob => {
+                        if (blob) {
+                            resolve(blob);
+                        } else {
+                            reject(new Error('Canvas toBlob returned null'));
+                        }
+                    }, mimeType, quality);
+                };
+                img.onerror = () => {
+                    showMessage('msg_error_process', 'error');
+                    reject(new Error('Image failed to load'));
+                };
+                
+                reader.onload = e => img.src = e.target.result;
+                reader.onerror = () => reject(new Error('File Reader failed'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function showMessage(key, type = 'success', replacements = {}) {
+            const currentLang = document.documentElement.lang || 'es';
+            let msgTemplate = (translations[currentLang] && translations[currentLang][key]) || key;
+            
+            const msgText = Object.entries(replacements).reduce(
+                (acc, [placeholder, value]) => acc.replace(`{${placeholder}}`, value),
+                msgTemplate
+            );
+            
+            messageEl.textContent = msgText;
+            
+            const colors = {
+                error: '#dc2626', // red-600
+                info: document.documentElement.classList.contains('dark') ? '#60a5fa' : '#2563eb', // blue-400 dark, blue-600 light
+                success: document.documentElement.classList.contains('dark') ? '#4ade80' : '#16a34a' // green-400 dark, green-600 light
+            };
+            messageEl.style.color = colors[type];
+            
+            if (type !== 'info') {
+                setTimeout(() => { if(messageEl.textContent === msgText) messageEl.textContent = ''; }, 4000);
+            }
+        }
+    });
+</script>
+</body>
+</html>
