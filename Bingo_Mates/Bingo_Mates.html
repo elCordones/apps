@@ -132,7 +132,10 @@
                 title: "Bingo Matemàtic!",
                 setup_title: "Configuració del Jugador",
                 name_label: "Com et dius?",
-                age_label: "Quants anys tens?",
+                diff_label: "Nivell de dificultat:",
+                diff_easy: "Fàcil",
+                diff_medium: "Normal",
+                diff_hard: "Difícil",
                 ops_label: "Què vols practicar?",
                 ops_add: "Sumes (+)",
                 ops_sub: "Restes (-)",
@@ -164,7 +167,10 @@
                 title: "Bingo Matemático!",
                 setup_title: "Configuración del Jugador",
                 name_label: "¿Cómo te llamas?",
-                age_label: "¿Cuántos años tienes?",
+                diff_label: "Nivel de dificultad:",
+                diff_easy: "Fácil",
+                diff_medium: "Normal",
+                diff_hard: "Difícil",
                 ops_label: "¿Qué quieres practicar?",
                 ops_add: "Sumas (+)",
                 ops_sub: "Restas (-)",
@@ -196,7 +202,10 @@
                 title: "Math Bingo!",
                 setup_title: "Player Setup",
                 name_label: "What's your name?",
-                age_label: "How old are you?",
+                diff_label: "Difficulty Level:",
+                diff_easy: "Easy",
+                diff_medium: "Normal",
+                diff_hard: "Hard",
                 ops_label: "What to practice?",
                 ops_add: "Addition (+)",
                 ops_sub: "Subtraction (-)",
@@ -228,7 +237,10 @@
                 title: "Bingo Matemático!",
                 setup_title: "Configuración do Xogador",
                 name_label: "Como te chamas?",
-                age_label: "Cantos anos tes?",
+                diff_label: "Nivel de dificultade:",
+                diff_easy: "Fácil",
+                diff_medium: "Normal",
+                diff_hard: "Difícil",
                 ops_label: "Que queres practicar?",
                 ops_add: "Sumas (+)",
                 ops_sub: "Restas (-)",
@@ -260,7 +272,10 @@
                 title: "Matematika Bingoa!",
                 setup_title: "Jokalariaren Konfigurazioa",
                 name_label: "Nola duzu izena?",
-                age_label: "Zenbat urte dituzu?",
+                diff_label: "Zailtasun maila:",
+                diff_easy: "Erraza",
+                diff_medium: "Arrunta",
+                diff_hard: "Zaila",
                 ops_label: "Zer praktikatu nahi duzu?",
                 ops_add: "Batuketak (+)",
                 ops_sub: "Kenketak (-)",
@@ -351,11 +366,25 @@
         };
 
         // --- MATH GENERATOR LOGIC ---
-        const generateLevel = (age, selectedOps) => {
+        const generateLevel = (difficulty, selectedOps) => {
             let maxNum = 10;
-            if (age >= 6 && age <= 8) maxNum = 20;
-            if (age > 8) maxNum = 50;
-            if (age > 10) maxNum = 100;
+            let maxFactor = 5;
+            let maxDivisor = 5;
+
+            // Logic adjusted for difficulty modes
+            if (difficulty === 'easy') {
+                maxNum = 10;
+                maxFactor = 5;
+                maxDivisor = 5;
+            } else if (difficulty === 'medium') {
+                maxNum = 50;
+                maxFactor = 9;
+                maxDivisor = 9;
+            } else if (difficulty === 'hard') {
+                maxNum = 100;
+                maxFactor = 12;
+                maxDivisor = 12;
+            }
 
             const pairs = [];
             const usedAnswers = new Set();
@@ -380,14 +409,12 @@
                         q = `${num1} - ${num2}`;
                         break;
                     case 'mul':
-                        const maxFactor = age > 8 ? 9 : 5;
                         num1 = Math.floor(Math.random() * maxFactor) + 1;
                         num2 = Math.floor(Math.random() * maxFactor) + 1;
                         a = num1 * num2;
                         q = `${num1} × ${num2}`;
                         break;
                     case 'div':
-                        const maxDivisor = age > 8 ? 9 : 5;
                         num2 = Math.floor(Math.random() * maxDivisor) + 2; 
                         a = Math.floor(Math.random() * 10) + 1; 
                         num1 = num2 * a;
@@ -416,7 +443,7 @@
             const [lang, setLang] = useState('ca');
             const [theme, setTheme] = useState('auto');
             const [gameState, setGameState] = useState('setup'); 
-            const [userData, setUserData] = useState({ name: '', age: 7, ops: ['add'] });
+            const [userData, setUserData] = useState({ name: '', difficulty: 'medium', ops: ['add'] });
             
             // Game State
             const [gridData, setGridData] = useState([]);
@@ -481,7 +508,7 @@
                 }
 
                 setUserData(data);
-                const pairs = generateLevel(parseInt(data.age), data.ops);
+                const pairs = generateLevel(data.difficulty, data.ops);
                 
                 const grid = [...pairs].sort(() => Math.random() - 0.5);
                 setGridData(grid);
@@ -593,6 +620,11 @@
                 }).join('\n');
 
                 const collectionTxt = collectedItems.join(' ');
+                
+                // Translate difficulty for report
+                let diffName = t.diff_medium;
+                if(userData.difficulty === 'easy') diffName = t.diff_easy;
+                if(userData.difficulty === 'hard') diffName = t.diff_hard;
 
                 const text = `
 🎓 ${t.title} - ${t.report_title}
@@ -600,7 +632,7 @@
 
 👤 ${t.setup_title}:
    - Nom: ${userData.name}
-   - Edat: ${userData.age}
+   - ${t.diff_label} ${diffName}
 
 🏆 ${t.score}: ${score} / 900 (Max)
 🎒 ${t.collection}: ${collectionTxt}
@@ -714,7 +746,7 @@ ${detailsText}
 
         const SetupScreen = ({ t, onStart }) => {
             const [name, setName] = useState('');
-            const [age, setAge] = useState(7);
+            const [difficulty, setDifficulty] = useState('medium'); // easy, medium, hard
             const [ops, setOps] = useState(['add']);
 
             const toggleOp = (op) => {
@@ -741,17 +773,28 @@ ${detailsText}
                             />
                         </div>
 
+                        {/* NEW DIFFICULTY SELECTOR */}
                         <div>
-                            <label className="block text-sm font-bold mb-1">{t.age_label}: {age}</label>
-                            <input 
-                                type="range" 
-                                min="4" max="12" 
-                                value={age} 
-                                onChange={(e) => setAge(e.target.value)}
-                                className="w-full accent-secondary"
-                            />
-                            <div className="flex justify-between text-xs text-gray-400">
-                                <span>4</span><span>12</span>
+                            <label className="block text-sm font-bold mb-1">{t.diff_label}</label>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => setDifficulty('easy')}
+                                    className={`flex-1 p-3 rounded-lg font-bold transition-all ${difficulty === 'easy' ? 'bg-green-400 text-white shadow-lg scale-105' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}
+                                >
+                                    {t.diff_easy}
+                                </button>
+                                <button 
+                                    onClick={() => setDifficulty('medium')}
+                                    className={`flex-1 p-3 rounded-lg font-bold transition-all ${difficulty === 'medium' ? 'bg-yellow-400 text-white shadow-lg scale-105' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}
+                                >
+                                    {t.diff_medium}
+                                </button>
+                                <button 
+                                    onClick={() => setDifficulty('hard')}
+                                    className={`flex-1 p-3 rounded-lg font-bold transition-all ${difficulty === 'hard' ? 'bg-red-400 text-white shadow-lg scale-105' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}
+                                >
+                                    {t.diff_hard}
+                                </button>
                             </div>
                         </div>
 
@@ -766,7 +809,7 @@ ${detailsText}
                         </div>
 
                         <button 
-                            onClick={() => onStart({name, age, ops})}
+                            onClick={() => onStart({name, difficulty, ops})}
                             className="w-full py-4 mt-4 bg-primary text-white text-xl font-bold rounded-xl shadow-lg hover:bg-red-500 transform hover:-translate-y-1 transition"
                         >
                             {t.start_btn}
