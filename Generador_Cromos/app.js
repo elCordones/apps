@@ -96,7 +96,7 @@ let currentLang = 'ca';
 
 /* --- FUNCIONS D'INICIALITZACIÓ --- */
 window.addEventListener('DOMContentLoaded', () => {
-    // Detectar tema fosc del sistema
+    // 1. Detectar tema fosc del sistema
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         document.body.setAttribute('data-theme', 'dark');
         const icon = document.querySelector('.theme-btn i');
@@ -104,8 +104,13 @@ window.addEventListener('DOMContentLoaded', () => {
         icon.classList.add('fa-sun');
     }
     
-    // Inicialitzem llistes i carta
+    // 2. Inicialitzem llistes i carta
     populateGroupSelector();
+    
+    // 3. CARREGUEM DADES DE LA MEMÒRIA (Auto-save)
+    loadFromLocal();
+    
+    // 4. Actualitzem la vista final
     updateCard();
 });
 
@@ -114,16 +119,14 @@ function changeLanguage(lang) {
     currentLang = lang;
     document.documentElement.lang = lang;
     
-    // Actualitzar textos estàtics de la UI
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if(translations[lang][key]) el.textContent = translations[lang][key];
     });
 
-    // Actualitzar etiquetes dinàmiques (Sliders i Grups)
     const type = document.getElementById('card-preview').getAttribute('data-type');
     updateDynamicLabels(type);
-    populateGroupSelector(); // Retraduir la llista de grups
+    populateGroupSelector();
     updateCard();
 }
 
@@ -149,7 +152,6 @@ function setType(type) {
 
     card.setAttribute('data-type', type);
     
-    // Actualitzem llistes de grups
     populateGroupSelector();
     updateDynamicLabels(type);
 
@@ -182,44 +184,48 @@ function updateCard() {
     // 1. Textos Bàsics
     document.getElementById('out-name').textContent = document.getElementById('inp-name').value;
     
-    // 2. Grup / Subtítol (Nou desplegable)
+    // 2. Grup / Subtítol
     const groupSelect = document.getElementById('inp-sub');
     let subText = groupSelect.value;
     
-    // Si és "custom", agafem l'input manual
     if (subText === 'custom') {
         subText = document.getElementById('inp-sub-custom').value || "Grup";
     }
 
-    // --- ASSIGNACIÓ D'ICONES (Lògica ampliada) ---
-    let icon = "";
+    // --- LÒGICA D'ICONES OPTIMITZADA ---
+    let icon = "✨ "; 
     const lowerSub = subText.toLowerCase();
 
-    // Fauna
-    if(lowerSub.includes("mam") || lowerSub.includes("man")) icon = "🐾 ";
-    else if(lowerSub.includes("ocell") || lowerSub.includes("pajar") || lowerSub.includes("bird") || lowerSub.includes("ave")) icon = "🦅 ";
-    else if(lowerSub.includes("rèptil") || lowerSub.includes("reptil")) icon = "🦎 ";
-    else if(lowerSub.includes("amfibi") || lowerSub.includes("anfibi") || lowerSub.includes("amphibian")) icon = "🐸 ";
-    else if(lowerSub.includes("peix") || lowerSub.includes("fish") || lowerSub.includes("pez")) icon = "🐟 ";
-    else if(lowerSub.includes("insect") || lowerSub.includes("bug")) icon = "🐞 ";
-    else if(lowerSub.includes("aràcnid") || lowerSub.includes("arácnido") || lowerSub.includes("arachnid")) icon = "🕷️ ";
-    else if(lowerSub.includes("mol·lusc") || lowerSub.includes("molusco") || lowerSub.includes("mollusk")) icon = "🐌 ";
-    
-    // Flora
-    else if(lowerSub.includes("arbre") || lowerSub.includes("tree") || lowerSub.includes("arbol")) icon = "🌲 ";
-    else if(lowerSub.includes("arbust") || lowerSub.includes("shrub")) icon = "🌳 ";
-    else if(lowerSub.includes("flor") || lowerSub.includes("flower")) icon = "🌻 ";
-    else if(lowerSub.includes("fong") || lowerSub.includes("fung") || lowerSub.includes("hongo")) icon = "🍄 ";
-    else if(lowerSub.includes("alga")) icon = "🪸 ";
-    else if(lowerSub.includes("herb") || lowerSub.includes("grass") || lowerSub.includes("falguera") || lowerSub.includes("fern") || lowerSub.includes("molsa") || lowerSub.includes("moss")) icon = "🌿 ";
-    
-    // Per defecte (si no troba res)
-    else icon = "✨ ";
+    // Diccionari de paraules clau -> Icones
+    const iconMap = {
+        "mam": "🐾 ", "man": "🐾 ",
+        "ocell": "🦅 ", "pajar": "🦅 ", "bird": "🦅 ", "ave": "🦅 ",
+        "rèptil": "🦎 ", "reptil": "🦎 ",
+        "amfibi": "🐸 ", "anfibi": "🐸 ", "amphibian": "🐸 ",
+        "peix": "🐟 ", "fish": "🐟 ", "pez": "🐟 ",
+        "insect": "🐞 ", "bug": "🐞 ",
+        "aràcnid": "🕷️ ", "arácnido": "🕷️ ", "arachnid": "🕷️ ",
+        "mol·lusc": "🐌 ", "molusco": "🐌 ", "mollusk": "🐌 ",
+        "arbre": "🌲 ", "tree": "🌲 ", "arbol": "🌲 ",
+        "arbust": "🌳 ", "shrub": "🌳 ",
+        "flor": "🌻 ", "flower": "🌻 ",
+        "fong": "🍄 ", "fung": "🍄 ", "hongo": "🍄 ",
+        "alga": "🪸 ",
+        "herb": "🌿 ", "grass": "🌿 ", "falguera": "🌿 ", "molsa": "🌿 "
+    };
+
+    // Busquem si alguna clau està dins del text
+    for (const [key, value] of Object.entries(iconMap)) {
+        if (lowerSub.includes(key)) {
+            icon = value;
+            break; 
+        }
+    }
 
     document.getElementById('out-sub').textContent = icon + subText;
     document.getElementById('out-desc').textContent = '"' + document.getElementById('inp-desc').value + '"';
     
-    // 3. Peu de Carta (Col·lecció i Número)
+    // 3. Peu de Carta
     const selector = document.getElementById('sel-collection');
     let collectionText = selector.value;
     
@@ -232,7 +238,7 @@ function updateCard() {
     
     document.getElementById('out-footer').textContent = `${collectionText} - #${number}`;
 
-    // 4. Sliders (Stats)
+    // 4. Stats
     const sizeVal = document.getElementById('rng-size').value;
     document.getElementById('val-size').textContent = sizeVal;
     document.getElementById('out-size').textContent = sizeVal;
@@ -241,7 +247,7 @@ function updateCard() {
     document.getElementById('val-speed').textContent = speedVal;
     document.getElementById('out-speed').textContent = speedVal;
 
-    // 5. Selectors (Raresa i Nivell)
+    // 5. Raresa i Nivell
     document.getElementById('out-rarity').textContent = document.getElementById('sel-rarity').value;
     
     const trophicVal = document.getElementById('sel-trophic').value;
@@ -249,57 +255,48 @@ function updateCard() {
     trophicCircle.textContent = trophicVal;
     trophicCircle.className = `trophic-circle bg-t-${trophicVal}`;
 
-    // 6. Icones FontAwesome
+    // 6. Icones
     document.getElementById('out-icon-1').className = 'fas ' + document.getElementById('icon-1').value;
     document.getElementById('out-icon-2').className = 'fas ' + document.getElementById('icon-2').value;
     document.getElementById('out-icon-3').className = 'fas ' + document.getElementById('icon-3').value;
+
+    // --- GUARDEM DADES (AUTO-SAVE) ---
+    saveToLocal();
 }
 
-/* --- GESTIÓ DEL SELECTOR DE GRUP (TAXONOMIA) --- */
+/* --- GESTIÓ DEL SELECTOR DE GRUP --- */
 function populateGroupSelector() {
     const type = document.getElementById('card-preview').getAttribute('data-type');
     const select = document.getElementById('inp-sub');
     const t = translations[currentLang];
     
-    // Guardem el valor actual per intentar mantenir-lo
     const previousValue = select.value;
-    
-    select.innerHTML = ""; // Netejem
+    select.innerHTML = "";
 
-    // Triem la llista correcta
     const list = (type === 'fauna') ? t.groupsFauna : t.groupsFlora;
 
-    // Creem les opcions
     list.forEach(item => {
         const option = document.createElement('option');
         option.value = item;
         option.textContent = item;
-        
-        // Si és "Altres...", li posem un valor especial 'custom'
         if (item.includes("Altres") || item.includes("Otros") || item.includes("Other")) {
             option.value = 'custom';
         }
-        
         select.appendChild(option);
     });
 
-    // Intentem mantenir la selecció
     let exists = false;
     for (let i = 0; i < select.options.length; i++) {
         if (select.options[i].value === previousValue) exists = true;
     }
 
-    if (exists) {
-        select.value = previousValue;
-    } else {
-        select.selectedIndex = 0;
-    }
+    if (exists) select.value = previousValue;
+    else select.selectedIndex = 0;
     
     toggleCustomGroup();
 }
 
 /* --- GESTIÓ D'INPUTS PERSONALITZATS --- */
-
 function toggleCustomGroup() {
     const select = document.getElementById('inp-sub');
     const customInput = document.getElementById('inp-sub-custom');
@@ -340,21 +337,19 @@ function loadImage(event) {
     }
 }
 
-/* --- FUNCIONS DE DESCÀRREGA I CÒPIA (html2canvas) --- */
+/* --- DESCÀRREGA I CÒPIA --- */
 function getCanvasOptions() {
     return {
-        scale: 2, // Millor resolució
+        scale: 2,
         backgroundColor: null,
         logging: false,
         useCORS: true
     };
 }
 
-// 1. DESCARREGAR IMATGE
 function downloadCard() {
     const cardElement = document.getElementById('card-preview');
     const name = document.getElementById('inp-name').value || 'cromo';
-    
     document.body.style.cursor = 'wait';
 
     html2canvas(cardElement, getCanvasOptions()).then(canvas => {
@@ -362,16 +357,13 @@ function downloadCard() {
         link.download = `EcoDuel_${name.replace(/\s+/g, '_')}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-        
         document.body.style.cursor = 'default';
     });
 }
 
-// 2. COPIAR AL PORTA-RETALLS
 function copyCard() {
     const cardElement = document.getElementById('card-preview');
     const t = translations[currentLang];
-
     document.body.style.cursor = 'wait';
 
     html2canvas(cardElement, getCanvasOptions()).then(canvas => {
@@ -389,4 +381,62 @@ function copyCard() {
             }
         });
     });
+}
+
+/* --- PERSISTÈNCIA (AUTO-SAVE) I RESET --- */
+
+function saveToLocal() {
+    const data = {
+        name: document.getElementById('inp-name').value,
+        sub: document.getElementById('inp-sub').value,
+        subCustom: document.getElementById('inp-sub-custom').value,
+        desc: document.getElementById('inp-desc').value,
+        size: document.getElementById('rng-size').value,
+        speed: document.getElementById('rng-speed').value,
+        trophic: document.getElementById('sel-trophic').value,
+        rarity: document.getElementById('sel-rarity').value,
+        collection: document.getElementById('sel-collection').value,
+        collectionCustom: document.getElementById('inp-collection-custom').value,
+        number: document.getElementById('inp-number').value,
+        icon1: document.getElementById('icon-1').value,
+        icon2: document.getElementById('icon-2').value,
+        icon3: document.getElementById('icon-3').value,
+        // Guardem també el tipus (Fauna/Flora)
+        type: document.getElementById('card-preview').getAttribute('data-type')
+    };
+    localStorage.setItem('ecoDuelData', JSON.stringify(data));
+}
+
+function loadFromLocal() {
+    const data = JSON.parse(localStorage.getItem('ecoDuelData'));
+    if (!data) return;
+
+    // Restaurar Tipus (Important fer-ho primer)
+    if (data.type) setType(data.type);
+
+    document.getElementById('inp-name').value = data.name || "Senglar";
+    document.getElementById('inp-sub').value = data.sub;
+    document.getElementById('inp-sub-custom').value = data.subCustom || "";
+    document.getElementById('inp-desc').value = data.desc || "";
+    document.getElementById('rng-size').value = data.size || 7;
+    document.getElementById('rng-speed').value = data.speed || 5;
+    document.getElementById('sel-trophic').value = data.trophic || 3;
+    document.getElementById('sel-rarity').value = data.rarity || "⭐";
+    document.getElementById('sel-collection').value = data.collection || "5è Primària";
+    document.getElementById('inp-collection-custom').value = data.collectionCustom || "";
+    document.getElementById('inp-number').value = data.number || 1;
+    
+    if(data.icon1) document.getElementById('icon-1').value = data.icon1;
+    if(data.icon2) document.getElementById('icon-2').value = data.icon2;
+    if(data.icon3) document.getElementById('icon-3').value = data.icon3;
+
+    // Actualitzem l'estat dels inputs personalitzats
+    toggleCustomGroup();
+    toggleCustomCollection();
+}
+
+function resetCard() {
+    if(!confirm("Segur que vols esborrar tot i començar de nou?")) return;
+    localStorage.removeItem('ecoDuelData');
+    location.reload();
 }
