@@ -191,18 +191,31 @@ function updateCard() {
         subText = document.getElementById('inp-sub-custom').value || "Grup";
     }
 
-    // Icona automàtica basada en el text
+    // --- ASSIGNACIÓ D'ICONES (Lògica ampliada) ---
     let icon = "";
     const lowerSub = subText.toLowerCase();
+
+    // Fauna
     if(lowerSub.includes("mam") || lowerSub.includes("man")) icon = "🐾 ";
     else if(lowerSub.includes("ocell") || lowerSub.includes("pajar") || lowerSub.includes("bird") || lowerSub.includes("ave")) icon = "🦅 ";
-    else if(lowerSub.includes("arbre") || lowerSub.includes("tree") || lowerSub.includes("arbol")) icon = "🌲 ";
-    else if(lowerSub.includes("herb") || lowerSub.includes("grass")) icon = "🌿 ";
-    else if(lowerSub.includes("insect") || lowerSub.includes("bug")) icon = "🐞 ";
-    else if(lowerSub.includes("peix") || lowerSub.includes("fish")) icon = "🐟 ";
     else if(lowerSub.includes("rèptil") || lowerSub.includes("reptil")) icon = "🦎 ";
-    else if(lowerSub.includes("amfibi") || lowerSub.includes("anfibi")) icon = "🐸 ";
+    else if(lowerSub.includes("amfibi") || lowerSub.includes("anfibi") || lowerSub.includes("amphibian")) icon = "🐸 ";
+    else if(lowerSub.includes("peix") || lowerSub.includes("fish") || lowerSub.includes("pez")) icon = "🐟 ";
+    else if(lowerSub.includes("insect") || lowerSub.includes("bug")) icon = "🐞 ";
+    else if(lowerSub.includes("aràcnid") || lowerSub.includes("arácnido") || lowerSub.includes("arachnid")) icon = "🕷️ ";
+    else if(lowerSub.includes("mol·lusc") || lowerSub.includes("molusco") || lowerSub.includes("mollusk")) icon = "🐌 ";
     
+    // Flora
+    else if(lowerSub.includes("arbre") || lowerSub.includes("tree") || lowerSub.includes("arbol")) icon = "🌲 ";
+    else if(lowerSub.includes("arbust") || lowerSub.includes("shrub")) icon = "🌳 ";
+    else if(lowerSub.includes("flor") || lowerSub.includes("flower")) icon = "🌻 ";
+    else if(lowerSub.includes("fong") || lowerSub.includes("fung") || lowerSub.includes("hongo")) icon = "🍄 ";
+    else if(lowerSub.includes("alga")) icon = "🪸 ";
+    else if(lowerSub.includes("herb") || lowerSub.includes("grass") || lowerSub.includes("falguera") || lowerSub.includes("fern") || lowerSub.includes("molsa") || lowerSub.includes("moss")) icon = "🌿 ";
+    
+    // Per defecte (si no troba res)
+    else icon = "✨ ";
+
     document.getElementById('out-sub').textContent = icon + subText;
     document.getElementById('out-desc').textContent = '"' + document.getElementById('inp-desc').value + '"';
     
@@ -270,9 +283,7 @@ function populateGroupSelector() {
         select.appendChild(option);
     });
 
-    // Restaurem selecció o posem la primera per defecte
-    // Nota: 'previousValue' pot no existir en la nova llista si hem canviat de Fauna a Flora
-    // Així que verifiquem si existeix a la llista textual o si era 'custom'
+    // Intentem mantenir la selecció
     let exists = false;
     for (let i = 0; i < select.options.length; i++) {
         if (select.options[i].value === previousValue) exists = true;
