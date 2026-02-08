@@ -8,20 +8,24 @@ const translations = {
         imageLabel: "Fotografia:",
         sizeLabel: "Mida / Pes (1-10):",
         trophicLabel: "Nivell Tròfic:",
-        rarityLabel: "Estat de Conservació (UICN):",
+        rarityLabel: "Estat de Conservació:",
         curiosityLabel: "Dada curiosa:",
         icon1Label: "Dieta / Tipus:",
         icon2Label: "Hàbitat:",
         icon3Label: "Activitat:",
         collectionLabel: "Col·lecció del curs:",
         numberLabel: "Número:",
-        instructions: "Fes una captura quan acabis!",
         statSize: "Mida",
         statLevel: "Nivell",
         statSpeed: "Velocitat",
         statDispersion: "Dispersió",
         labelSpeed: "Velocitat",
-        labelDispersion: "Dispersió"
+        labelDispersion: "Dispersió",
+        // Nous Botons
+        btnDownload: "Descarregar PNG",
+        btnCopy: "Copiar Imatge",
+        copySuccess: "✅ Cromo copiat! Ara fes Ctrl+V on vulguis.",
+        copyError: "❌ No s'ha pogut copiar automàticament. Fes servir 'Descarregar'."
     },
     es: {
         title: "🛠️ Editor Eco-Duel",
@@ -31,20 +35,24 @@ const translations = {
         imageLabel: "Fotografía:",
         sizeLabel: "Tamaño / Peso (1-10):",
         trophicLabel: "Nivel Trófico:",
-        rarityLabel: "Estado de Conservación (UICN):",
+        rarityLabel: "Estado de Conservación:",
         curiosityLabel: "Dato curioso:",
         icon1Label: "Dieta / Tipo:",
         icon2Label: "Hábitat:",
         icon3Label: "Actividad:",
         collectionLabel: "Colección del curso:",
         numberLabel: "Número:",
-        instructions: "¡Haz una captura al terminar!",
         statSize: "Tamaño",
         statLevel: "Nivel",
         statSpeed: "Velocidad",
         statDispersion: "Dispersión",
         labelSpeed: "Velocidad",
-        labelDispersion: "Dispersión"
+        labelDispersion: "Dispersión",
+        // Nuevos Botones
+        btnDownload: "Descargar PNG",
+        btnCopy: "Copiar Imagen",
+        copySuccess: "✅ ¡Cromo copiado! Haz Ctrl+V donde quieras.",
+        copyError: "❌ No se pudo copiar. Usa 'Descargar'."
     },
     en: {
         title: "🛠️ Eco-Duel Editor",
@@ -54,20 +62,24 @@ const translations = {
         imageLabel: "Photograph:",
         sizeLabel: "Size / Weight (1-10):",
         trophicLabel: "Trophic Level:",
-        rarityLabel: "Conservation Status (IUCN):",
+        rarityLabel: "Conservation Status:",
         curiosityLabel: "Fun Fact:",
         icon1Label: "Diet / Type:",
         icon2Label: "Habitat:",
         icon3Label: "Activity:",
         collectionLabel: "Class Collection:",
         numberLabel: "Number:",
-        instructions: "Take a screenshot when done!",
         statSize: "Size",
         statLevel: "Level",
         statSpeed: "Speed",
         statDispersion: "Dispersion",
         labelSpeed: "Speed",
-        labelDispersion: "Dispersion"
+        labelDispersion: "Dispersion",
+        // New Buttons
+        btnDownload: "Download PNG",
+        btnCopy: "Copy Image",
+        copySuccess: "✅ Card copied! Press Ctrl+V to paste.",
+        copyError: "❌ Copy failed. Please use 'Download'."
     }
 };
 
@@ -170,8 +182,7 @@ function updateCard() {
     // 2. Peu de Carta (Col·lecció i Número)
     const collection = document.getElementById('sel-collection').value;
     let number = document.getElementById('inp-number').value;
-    // Format "01"
-    number = number.toString().padStart(2, '0');
+    number = number.toString().padStart(2, '0'); // Format "01"
     document.getElementById('out-footer').textContent = `${collection} - #${number}`;
 
     // 3. Sliders (Stats)
@@ -189,7 +200,6 @@ function updateCard() {
     const trophicVal = document.getElementById('sel-trophic').value;
     const trophicCircle = document.getElementById('out-trophic');
     trophicCircle.textContent = trophicVal;
-    // Resetegem classes i afegim la nova
     trophicCircle.className = `trophic-circle bg-t-${trophicVal}`;
 
     // 5. Icones FontAwesome
@@ -206,9 +216,59 @@ function loadImage(event) {
         reader.onload = function(e) {
             const imgContainer = document.getElementById('img-container');
             imgContainer.style.backgroundImage = `url(${e.target.result})`;
-            // Amaguem la icona de la càmera
             document.getElementById('img-placeholder').style.display = 'none';
         }
         reader.readAsDataURL(file);
     }
+}
+
+/* --- FUNCIONS DE DESCÀRREGA I CÒPIA (html2canvas) --- */
+function getCanvasOptions() {
+    return {
+        scale: 2, // Millor resolució
+        backgroundColor: null,
+        logging: false,
+        useCORS: true
+    };
+}
+
+// 1. DESCARREGAR IMATGE
+function downloadCard() {
+    const cardElement = document.getElementById('card-preview');
+    const name = document.getElementById('inp-name').value || 'cromo';
+    
+    document.body.style.cursor = 'wait';
+
+    html2canvas(cardElement, getCanvasOptions()).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `EcoDuel_${name.replace(/\s+/g, '_')}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        document.body.style.cursor = 'default';
+    });
+}
+
+// 2. COPIAR AL PORTA-RETALLS
+function copyCard() {
+    const cardElement = document.getElementById('card-preview');
+    const t = translations[currentLang];
+
+    document.body.style.cursor = 'wait';
+
+    html2canvas(cardElement, getCanvasOptions()).then(canvas => {
+        canvas.toBlob(blob => {
+            try {
+                const item = new ClipboardItem({ 'image/png': blob });
+                navigator.clipboard.write([item]).then(() => {
+                    alert(t.copySuccess);
+                });
+            } catch (err) {
+                console.error(err);
+                alert(t.copyError);
+            } finally {
+                document.body.style.cursor = 'default';
+            }
+        });
+    });
 }
