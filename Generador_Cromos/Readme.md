@@ -11,6 +11,7 @@ Una aplicació web interactiva dissenyada per a l'aula, que permet als alumnes c
 ## 🚀 Característiques Principals
 
 * **🎨 Disseny Modern:** Estil "Glassmorphism" net i atractiu visualment.
+* **🏫 Escalabilitat Total:** Selector de curs flexible (Primària, ESO, Batxillerat) i opció de **text lliure** per a grups personalitzats (ex: "Club de Ciència").
 * **🌙 Mode Clar/Fosc:** Detecta automàticament la preferència del sistema i inclou un selector manual.
 * **🌍 Multi-idioma:** Traducció instantània a Català, Castellà i Anglès (i18n).
 * **📸 Generació d'Imatges:** Permet **descarregar** el cromo en PNG d'alta qualitat o **copiar-lo** al porta-retalls per enganxar-lo a Google Slides/Docs.
