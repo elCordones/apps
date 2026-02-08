@@ -24,7 +24,11 @@ const translations = {
         btnDownload: "Descarregar PNG",
         btnCopy: "Copiar Imatge",
         copySuccess: "✅ Cromo copiat! Ara fes Ctrl+V on vulguis.",
-        copyError: "❌ No s'ha pogut copiar automàticament. Fes servir 'Descarregar'."
+        copyError: "❌ No s'ha pogut copiar automàticament. Fes servir 'Descarregar'.",
+        // Llistes de Grups
+        groupsFauna: ["Mamífer", "Ocell", "Rèptil", "Amfibi", "Peix", "Insecte", "Aràcnid", "Mol·lusc", "Altres..."],
+        groupsFlora: ["Arbre", "Arbust", "Herba", "Flor", "Falguera", "Molsa", "Fong", "Alga", "Altres..."],
+        customGroupPlaceholder: "Escriu el grup..."
     },
     es: {
         title: "🛠️ Editor Eco-Duel",
@@ -50,7 +54,11 @@ const translations = {
         btnDownload: "Descargar PNG",
         btnCopy: "Copiar Imagen",
         copySuccess: "✅ ¡Cromo copiado! Haz Ctrl+V donde quieras.",
-        copyError: "❌ No se pudo copiar. Usa 'Descargar'."
+        copyError: "❌ No se pudo copiar. Usa 'Descargar'.",
+        // Listas de Grupos
+        groupsFauna: ["Mamífero", "Ave", "Reptil", "Anfibio", "Pez", "Insecto", "Arácnido", "Molusco", "Otros..."],
+        groupsFlora: ["Árbol", "Arbusto", "Hierba", "Flor", "Helecho", "Musgo", "Hongo", "Alga", "Otros..."],
+        customGroupPlaceholder: "Escribe el grupo..."
     },
     en: {
         title: "🛠️ Eco-Duel Editor",
@@ -76,7 +84,11 @@ const translations = {
         btnDownload: "Download PNG",
         btnCopy: "Copy Image",
         copySuccess: "✅ Card copied! Press Ctrl+V to paste.",
-        copyError: "❌ Copy failed. Please use 'Download'."
+        copyError: "❌ Copy failed. Please use 'Download'.",
+        // Group Lists
+        groupsFauna: ["Mammal", "Bird", "Reptile", "Amphibian", "Fish", "Insect", "Arachnid", "Mollusk", "Other..."],
+        groupsFlora: ["Tree", "Shrub", "Herb", "Flower", "Fern", "Moss", "Fungus", "Algae", "Other..."],
+        customGroupPlaceholder: "Type the group..."
     }
 };
 
@@ -91,6 +103,9 @@ window.addEventListener('DOMContentLoaded', () => {
         icon.classList.remove('fa-moon');
         icon.classList.add('fa-sun');
     }
+    
+    // Inicialitzem llistes i carta
+    populateGroupSelector();
     updateCard();
 });
 
@@ -105,9 +120,11 @@ function changeLanguage(lang) {
         if(translations[lang][key]) el.textContent = translations[lang][key];
     });
 
-    // Actualitzar etiquetes dinàmiques (Sliders)
+    // Actualitzar etiquetes dinàmiques (Sliders i Grups)
     const type = document.getElementById('card-preview').getAttribute('data-type');
     updateDynamicLabels(type);
+    populateGroupSelector(); // Retraduir la llista de grups
+    updateCard();
 }
 
 function toggleTheme() {
@@ -131,6 +148,9 @@ function setType(type) {
     const btnFlora = document.getElementById('btn-flora');
 
     card.setAttribute('data-type', type);
+    
+    // Actualitzem llistes de grups
+    populateGroupSelector();
     updateDynamicLabels(type);
 
     if (type === 'fauna') {
@@ -157,54 +177,49 @@ function updateDynamicLabels(type) {
     }
 }
 
-// Funció per mostrar/amagar el camp personalitzat de col·lecció
-function toggleCustomCollection() {
-    const selector = document.getElementById('sel-collection');
-    const customInput = document.getElementById('inp-collection-custom');
-    
-    if (selector.value === 'custom') {
-        customInput.style.display = 'block'; // Mostrem l'input
-        customInput.focus(); // Posem el cursor a dins
-    } else {
-        customInput.style.display = 'none'; // L'amaguem
-    }
-    updateCard(); // Actualitzem la carta
-}
-
 /* --- FUNCIÓ PRINCIPAL D'ACTUALITZACIÓ --- */
 function updateCard() {
     // 1. Textos Bàsics
     document.getElementById('out-name').textContent = document.getElementById('inp-name').value;
-    const subText = document.getElementById('inp-sub').value;
     
-    // Icona automàtica simple al subtítol
+    // 2. Grup / Subtítol (Nou desplegable)
+    const groupSelect = document.getElementById('inp-sub');
+    let subText = groupSelect.value;
+    
+    // Si és "custom", agafem l'input manual
+    if (subText === 'custom') {
+        subText = document.getElementById('inp-sub-custom').value || "Grup";
+    }
+
+    // Icona automàtica basada en el text
     let icon = "";
     const lowerSub = subText.toLowerCase();
     if(lowerSub.includes("mam") || lowerSub.includes("man")) icon = "🐾 ";
-    else if(lowerSub.includes("ocell") || lowerSub.includes("pajar") || lowerSub.includes("bird")) icon = "🦅 ";
+    else if(lowerSub.includes("ocell") || lowerSub.includes("pajar") || lowerSub.includes("bird") || lowerSub.includes("ave")) icon = "🦅 ";
     else if(lowerSub.includes("arbre") || lowerSub.includes("tree") || lowerSub.includes("arbol")) icon = "🌲 ";
     else if(lowerSub.includes("herb") || lowerSub.includes("grass")) icon = "🌿 ";
     else if(lowerSub.includes("insect") || lowerSub.includes("bug")) icon = "🐞 ";
     else if(lowerSub.includes("peix") || lowerSub.includes("fish")) icon = "🐟 ";
+    else if(lowerSub.includes("rèptil") || lowerSub.includes("reptil")) icon = "🦎 ";
+    else if(lowerSub.includes("amfibi") || lowerSub.includes("anfibi")) icon = "🐸 ";
     
     document.getElementById('out-sub').textContent = icon + subText;
     document.getElementById('out-desc').textContent = '"' + document.getElementById('inp-desc').value + '"';
     
-    // 2. Peu de Carta (Col·lecció i Número) - LÒGICA MILLORADA
+    // 3. Peu de Carta (Col·lecció i Número)
     const selector = document.getElementById('sel-collection');
     let collectionText = selector.value;
     
-    // Si ha triat "Personalitzat", agafem el valor de l'input de text
     if (collectionText === 'custom') {
         collectionText = document.getElementById('inp-collection-custom').value || "Col·lecció";
     }
 
     let number = document.getElementById('inp-number').value;
-    number = number.toString().padStart(2, '0'); // Format "01"
+    number = number.toString().padStart(2, '0');
     
     document.getElementById('out-footer').textContent = `${collectionText} - #${number}`;
 
-    // 3. Sliders (Stats)
+    // 4. Sliders (Stats)
     const sizeVal = document.getElementById('rng-size').value;
     document.getElementById('val-size').textContent = sizeVal;
     document.getElementById('out-size').textContent = sizeVal;
@@ -213,7 +228,7 @@ function updateCard() {
     document.getElementById('val-speed').textContent = speedVal;
     document.getElementById('out-speed').textContent = speedVal;
 
-    // 4. Selectors (Raresa i Nivell)
+    // 5. Selectors (Raresa i Nivell)
     document.getElementById('out-rarity').textContent = document.getElementById('sel-rarity').value;
     
     const trophicVal = document.getElementById('sel-trophic').value;
@@ -221,10 +236,83 @@ function updateCard() {
     trophicCircle.textContent = trophicVal;
     trophicCircle.className = `trophic-circle bg-t-${trophicVal}`;
 
-    // 5. Icones FontAwesome
+    // 6. Icones FontAwesome
     document.getElementById('out-icon-1').className = 'fas ' + document.getElementById('icon-1').value;
     document.getElementById('out-icon-2').className = 'fas ' + document.getElementById('icon-2').value;
     document.getElementById('out-icon-3').className = 'fas ' + document.getElementById('icon-3').value;
+}
+
+/* --- GESTIÓ DEL SELECTOR DE GRUP (TAXONOMIA) --- */
+function populateGroupSelector() {
+    const type = document.getElementById('card-preview').getAttribute('data-type');
+    const select = document.getElementById('inp-sub');
+    const t = translations[currentLang];
+    
+    // Guardem el valor actual per intentar mantenir-lo
+    const previousValue = select.value;
+    
+    select.innerHTML = ""; // Netejem
+
+    // Triem la llista correcta
+    const list = (type === 'fauna') ? t.groupsFauna : t.groupsFlora;
+
+    // Creem les opcions
+    list.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        option.textContent = item;
+        
+        // Si és "Altres...", li posem un valor especial 'custom'
+        if (item.includes("Altres") || item.includes("Otros") || item.includes("Other")) {
+            option.value = 'custom';
+        }
+        
+        select.appendChild(option);
+    });
+
+    // Restaurem selecció o posem la primera per defecte
+    // Nota: 'previousValue' pot no existir en la nova llista si hem canviat de Fauna a Flora
+    // Així que verifiquem si existeix a la llista textual o si era 'custom'
+    let exists = false;
+    for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].value === previousValue) exists = true;
+    }
+
+    if (exists) {
+        select.value = previousValue;
+    } else {
+        select.selectedIndex = 0;
+    }
+    
+    toggleCustomGroup();
+}
+
+/* --- GESTIÓ D'INPUTS PERSONALITZATS --- */
+
+function toggleCustomGroup() {
+    const select = document.getElementById('inp-sub');
+    const customInput = document.getElementById('inp-sub-custom');
+    
+    if (select.value === 'custom') {
+        customInput.style.display = 'block';
+        customInput.placeholder = translations[currentLang].customGroupPlaceholder || "...";
+    } else {
+        customInput.style.display = 'none';
+    }
+    updateCard();
+}
+
+function toggleCustomCollection() {
+    const selector = document.getElementById('sel-collection');
+    const customInput = document.getElementById('inp-collection-custom');
+    
+    if (selector.value === 'custom') {
+        customInput.style.display = 'block';
+        customInput.focus();
+    } else {
+        customInput.style.display = 'none';
+    }
+    updateCard();
 }
 
 /* --- CÀRREGA D'IMATGES --- */
