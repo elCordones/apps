@@ -166,6 +166,18 @@ input[type=range] { width: 100%; cursor: pointer; accent-color: var(--primary); 
 /* Grid d'icones */
 .icons-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
+/* Input Personalitzat Col·lecció (Ocult per defecte) */
+#inp-collection-custom {
+    border: 2px dashed var(--primary);
+    background-color: var(--input-bg);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* --- PREVIEW AREA (DRETA) --- */
 .preview-area {
     flex: 1;
@@ -209,11 +221,23 @@ input[type=range] { width: 100%; cursor: pointer; accent-color: var(--primary); 
 
 .action-btn:active { transform: translateY(0); }
 
+/* Botó Descarregar: Fons Principal, Text Blanc */
 .download-btn { background-color: var(--primary); color: white; }
 .download-btn:hover { background-color: var(--primary-hover); }
 
-.copy-btn { background-color: white; color: var(--text-main); border: 2px solid var(--border-color); }
-.copy-btn:hover { border-color: var(--primary); color: var(--primary); }
+/* Botó Copiar: CORREGIT per millor contrast */
+.copy-btn { 
+    background-color: #ffffff; /* Blanc net */
+    color: #1f2937; /* Text gris molt fosc */
+    border: 2px solid var(--border-color); /* Vora grisa */
+}
+
+/* Efecte Hover per Copiar: Es posa del color principal */
+.copy-btn:hover { 
+    border-color: var(--primary); 
+    background-color: var(--primary);
+    color: white; 
+}
 
 /* --- CARTA (ESTIL) --- */
 .card {
