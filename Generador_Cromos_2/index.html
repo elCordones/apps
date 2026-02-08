@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Cromos Eco-Duel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <aside class="controls">
+        <header class="app-header">
+            <h2 data-i18n="title">🛠️ Editor</h2>
+            <div class="settings-row">
+                <select id="lang-selector" onchange="changeLanguage(this.value)" class="lang-select">
+                    <option value="ca">CA</option>
+                    <option value="es">ES</option>
+                    <option value="en">EN</option>
+                </select>
+                <button class="theme-btn" onclick="toggleTheme()" title="Canviar Tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </header>
+        
+        <div class="scroll-content">
+            <div class="form-group">
+                <label data-i18n="typeLabel">Tipus de Cromo</label>
+                <div class="type-selector">
+                    <button class="type-btn active-fauna" onclick="setType('fauna')" id="btn-fauna">
+                        <i class="fas fa-paw"></i> Fauna
+                    </button>
+                    <button class="type-btn" onclick="setType('flora')" id="btn-flora">
+                        <i class="fas fa-leaf"></i> Flora
+                    </button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label data-i18n="nameLabel">Nom</label>
+                    <input type="text" id="inp-name" value="Senglar" oninput="updateCard()" placeholder="Ex: Senglar">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="groupLabel">Grup / Subtítol</label>
+                    <input type="text" id="inp-sub" value="Mamífer" oninput="updateCard()" placeholder="Ex: Mamífer">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="imageLabel">Imatge</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="inp-file" accept="image/*" onchange="loadImage(event)">
+                    <span class="file-custom-label"><i class="fas fa-upload"></i> Pujar Imatge</span>
+                </div>
+            </div>
+
+            <div class="sliders-section">
+                <div class="form-group">
+                    <div class="label-row">
+                        <label data-i18n="sizeLabel">Mida</label>
+                        <span class="range-value" id="val-size">7</span>
+                    </div>
+                    <input type="range" min="1" max="10" value="7" id="rng-size" oninput="updateCard()">
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label id="lbl-speed">Velocitat</label>
+                        <span class="range-value" id="val-speed">5</span>
+                    </div>
+                    <input type="range" min="1" max="10" value="5" id="rng-speed" oninput="updateCard()">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label data-i18n="trophicLabel">Nivell Tròfic</label>
+                    <select id="sel-trophic" onchange="updateCard()">
+                        <option value="1">1 - Productor</option>
+                        <option value="2">2 - Herbívor</option>
+                        <option value="3" selected>3 - Omnívor</option>
+                        <option value="4">4 - Superdepredador</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="rarityLabel">Raresa</label>
+                    <select id="sel-rarity" onchange="updateCard()">
+                        <option value="⭐">⭐ Comú</option>
+                        <option value="⭐⭐">⭐⭐ Vulnerable</option>
+                        <option value="⭐⭐⭐">⭐⭐⭐ En Perill</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="icons-grid">
+                <div class="form-group">
+                    <label data-i18n="icon1Label">Dieta / Tipus</label>
+                    <select id="icon-1" onchange="updateCard()">
+                        <option value="fa-drumstick-bite">Carn</option>
+                        <option value="fa-leaf">Fulles</option>
+                        <option value="fa-burger">Omnívor</option>
+                        <option value="fa-tree">Arbre</option>
+                        <option value="fa-seedling">Herba</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="icon2Label">Hàbitat</label>
+                    <select id="icon-2" onchange="updateCard()">
+                        <option value="fa-tree">Bosc</option>
+                        <option value="fa-water">Riu</option>
+                        <option value="fa-sun">Sol / Secà</option>
+                        <option value="fa-mountain">Muntanya</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="icon3Label">Activitat</label>
+                    <select id="icon-3" onchange="updateCard()">
+                        <option value="fa-sun">Diürn</option>
+                        <option value="fa-moon">Nocturn</option>
+                        <option value="fa-fire">Resistent foc</option>
+                        <option value="fa-snowflake">Hivern</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="curiosityLabel">Dada curiosa</label>
+                <textarea id="inp-desc" rows="3" oninput="updateCard()">Té un olfacte increïble.</textarea>
+            </div>
+            
+            <div class="row">
+                <div class="form-group" style="flex: 2;">
+                    <label data-i18n="collectionLabel">Col·lecció</label>
+                    <select id="sel-collection" onchange="updateCard()">
+                        <option value="Col·lecció 5è">Col·lecció 5è</option>
+                        <option value="Col·lecció 6è">Col·lecció 6è</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label data-i18n="numberLabel">Número</label>
+                    <input type="number" id="inp-number" value="1" min="1" max="99" oninput="updateCard()">
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="preview-area">
+        <div class="instruction-badge">
+            <i class="fas fa-camera"></i> <span data-i18n="instructions">Fes una captura!</span>
+        </div>
+
+        <div class="card" id="card-preview" data-type="fauna">
+            <div class="header">
+                <span class="name" id="out-name">Senglar</span>
+                <span class="icon-text" id="out-sub">🐾 Mamífer</span>
+            </div>
+            <div class="image-container" id="img-container">
+                <div class="image-placeholder" id="img-placeholder"><i class="fas fa-camera"></i></div>
+                <div class="rarity-badge" id="out-rarity">⭐</div>
+            </div>
+            <div class="stats-container">
+                <div class="stat-box">
+                    <div class="stat-label" data-i18n="statSize">Mida</div>
+                    <div class="stat-value" id="out-size">7</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label" data-i18n="statLevel">Nivell</div>
+                    <div class="trophic-circle bg-t-3" id="out-trophic">3</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label" id="lbl-out-speed">Velocitat</div>
+                    <div class="stat-value" id="out-speed">5</div>
+                </div>
+            </div>
+            <div class="icons-row">
+                <div class="icon-badge"><i class="fas fa-burger" id="out-icon-1"></i></div>
+                <div class="icon-badge"><i class="fas fa-tree" id="out-icon-2"></i></div>
+                <div class="icon-badge"><i class="fas fa-moon" id="out-icon-3"></i></div>
+            </div>
+            <div class="description-box" id="out-desc">"Té un olfacte increïble."</div>
+            <div class="card-footer" id="out-footer">Col·lecció 5è - #01</div>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <div>© David Cordones</div>
+        <div>
+            Codi: <a href="LICENSE.txt">AGPL v3</a> · 
+            Contingut: <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
