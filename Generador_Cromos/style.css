@@ -166,8 +166,8 @@ input[type=range] { width: 100%; cursor: pointer; accent-color: var(--primary); 
 /* Grid d'icones */
 .icons-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
-/* Input Personalitzat Col·lecció (Ocult per defecte) */
-#inp-collection-custom {
+/* Inputs Personalitzats (Ocults per defecte) */
+#inp-collection-custom, #inp-sub-custom {
     border: 2px dashed var(--primary);
     background-color: var(--input-bg);
     animation: fadeIn 0.3s ease;
@@ -221,18 +221,16 @@ input[type=range] { width: 100%; cursor: pointer; accent-color: var(--primary); 
 
 .action-btn:active { transform: translateY(0); }
 
-/* Botó Descarregar: Fons Principal, Text Blanc */
+/* Botó Descarregar */
 .download-btn { background-color: var(--primary); color: white; }
 .download-btn:hover { background-color: var(--primary-hover); }
 
 /* Botó Copiar: CORREGIT per millor contrast */
 .copy-btn { 
-    background-color: #ffffff; /* Blanc net */
-    color: #1f2937; /* Text gris molt fosc */
-    border: 2px solid var(--border-color); /* Vora grisa */
+    background-color: #ffffff; 
+    color: #1f2937; 
+    border: 2px solid var(--border-color); 
 }
-
-/* Efecte Hover per Copiar: Es posa del color principal */
 .copy-btn:hover { 
     border-color: var(--primary); 
     background-color: var(--primary);
