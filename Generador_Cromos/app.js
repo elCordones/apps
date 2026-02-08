@@ -21,7 +21,6 @@ const translations = {
         statDispersion: "Dispersió",
         labelSpeed: "Velocitat",
         labelDispersion: "Dispersió",
-        // Nous Botons
         btnDownload: "Descarregar PNG",
         btnCopy: "Copiar Imatge",
         copySuccess: "✅ Cromo copiat! Ara fes Ctrl+V on vulguis.",
@@ -48,7 +47,6 @@ const translations = {
         statDispersion: "Dispersión",
         labelSpeed: "Velocidad",
         labelDispersion: "Dispersión",
-        // Nuevos Botones
         btnDownload: "Descargar PNG",
         btnCopy: "Copiar Imagen",
         copySuccess: "✅ ¡Cromo copiado! Haz Ctrl+V donde quieras.",
@@ -75,7 +73,6 @@ const translations = {
         statDispersion: "Dispersion",
         labelSpeed: "Speed",
         labelDispersion: "Dispersion",
-        // New Buttons
         btnDownload: "Download PNG",
         btnCopy: "Copy Image",
         copySuccess: "✅ Card copied! Press Ctrl+V to paste.",
@@ -160,6 +157,20 @@ function updateDynamicLabels(type) {
     }
 }
 
+// Funció per mostrar/amagar el camp personalitzat de col·lecció
+function toggleCustomCollection() {
+    const selector = document.getElementById('sel-collection');
+    const customInput = document.getElementById('inp-collection-custom');
+    
+    if (selector.value === 'custom') {
+        customInput.style.display = 'block'; // Mostrem l'input
+        customInput.focus(); // Posem el cursor a dins
+    } else {
+        customInput.style.display = 'none'; // L'amaguem
+    }
+    updateCard(); // Actualitzem la carta
+}
+
 /* --- FUNCIÓ PRINCIPAL D'ACTUALITZACIÓ --- */
 function updateCard() {
     // 1. Textos Bàsics
@@ -179,11 +190,19 @@ function updateCard() {
     document.getElementById('out-sub').textContent = icon + subText;
     document.getElementById('out-desc').textContent = '"' + document.getElementById('inp-desc').value + '"';
     
-    // 2. Peu de Carta (Col·lecció i Número)
-    const collection = document.getElementById('sel-collection').value;
+    // 2. Peu de Carta (Col·lecció i Número) - LÒGICA MILLORADA
+    const selector = document.getElementById('sel-collection');
+    let collectionText = selector.value;
+    
+    // Si ha triat "Personalitzat", agafem el valor de l'input de text
+    if (collectionText === 'custom') {
+        collectionText = document.getElementById('inp-collection-custom').value || "Col·lecció";
+    }
+
     let number = document.getElementById('inp-number').value;
     number = number.toString().padStart(2, '0'); // Format "01"
-    document.getElementById('out-footer').textContent = `${collection} - #${number}`;
+    
+    document.getElementById('out-footer').textContent = `${collectionText} - #${number}`;
 
     // 3. Sliders (Stats)
     const sizeVal = document.getElementById('rng-size').value;
