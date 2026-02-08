@@ -6,6 +6,7 @@
     <title>Generador de Cromos Eco-Duel</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -148,8 +149,14 @@
     </aside>
 
     <main class="preview-area">
-        <div class="instruction-badge">
-            <i class="fas fa-camera"></i> <span data-i18n="instructions">Fes una captura!</span>
+        
+        <div class="actions-bar">
+            <button class="action-btn download-btn" onclick="downloadCard()">
+                <i class="fas fa-download"></i> <span data-i18n="btnDownload">Descarregar</span>
+            </button>
+            <button class="action-btn copy-btn" onclick="copyCard()">
+                <i class="fas fa-copy"></i> <span data-i18n="btnCopy">Copiar</span>
+            </button>
         </div>
 
         <div class="card" id="card-preview" data-type="fauna">
