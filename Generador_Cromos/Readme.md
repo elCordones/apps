@@ -4,49 +4,70 @@
 ![Llicència Contingut](https://img.shields.io/badge/Content-CC%20BY--SA%204.0-green.svg)
 ![Status](https://img.shields.io/badge/Status-Educational-orange)
 
-Una aplicació web interactiva dissenyada per a l'aula, que permet als alumnes crear cromos personalitzats de flora i fauna. Aquesta eina fomenta la **gamificació** en l'aprenentatge de les Ciències Naturals.
+Una aplicació web interactiva dissenyada per a l'aula, que permet als alumnes crear cromos personalitzats de flora i fauna amb aspecte professional. Aquesta eina fomenta la **gamificació** en l'aprenentatge de les Ciències Naturals.
 
 ![Captura de pantalla de l'aplicació](./screenshot_app.png)
 
-## 🚀 Característiques Principals
+## ✨ Funcionalitats Clau
 
-* **🎨 Disseny Modern:** Estil "Glassmorphism" net i atractiu visualment.
-* **🏫 Escalabilitat Total:** Selector de curs flexible (Primària, ESO, Batxillerat) i opció de **text lliure** per a grups personalitzats (ex: "Club de Ciència").
-* **🌙 Mode Clar/Fosc:** Detecta automàticament la preferència del sistema i inclou un selector manual.
-* **🌍 Multi-idioma:** Traducció instantània a Català, Castellà i Anglès (i18n).
-* **📸 Generació d'Imatges:** Permet **descarregar** el cromo en PNG d'alta qualitat o **copiar-lo** al porta-retalls per enganxar-lo a Google Slides/Docs.
-* **🦁 Tipus Dinàmics:** Canvia automàticament els camps i colors segons si és "Fauna" o "Flora".
-* **📊 Estadístiques Visuals:** Sliders per a Mida i Velocitat/Dispersió, i selectors visuals per al Nivell Tròfic.
+Aquesta versió inclou millores tècniques per garantir una experiència fluida a l'aula:
+
+* **💾 Auto-Guardat (Persistència):** L'aplicació desa automàticament el progrés al navegador. Si l'alumne tanca la pestanya per error, **no perd la feina**; quan torni a obrir l'app, tot estarà com ho va deixar.
+* **🗑️ Reinici Ràpid:** Botó de "Paperera" per netejar tot el formulari i començar un cromo nou des de zero.
+* **🧠 Taxonomia Intel·ligent:** Els grups (Mamífer, Aràcnid, Arbre, etc.) es seleccionen des d'un desplegable que assigna automàticament la icona correcta (ex: Aràcnid = 🕷️).
+* **🏫 Escalabilitat Total:** Adaptable a qualsevol etapa (Primària, ESO, Batxillerat). Els desplegables de "Curs" i "Grup" inclouen una opció **Personalitzada** per escriure text lliure.
+* **📸 Exportació d'Alta Qualitat:**
+    * **Descarregar:** Genera un fitxer PNG.
+    * **Copiar:** Posa la imatge al porta-retalls per fer "Enganxar" (Ctrl+V) directament a Google Slides o Docs.
+* **🎨 Disseny Modern:** Estil "Glassmorphism", mode fosc automàtic (Dark Mode) i interfície *responsive*.
+* **🌍 Multi-idioma:** Disponible en Català, Castellà i Anglès.
 
 ## 🛠️ Tecnologies Utilitzades
 
-Aquest projecte s'ha desenvolupat utilitzant tecnologies web estàndard, sense necessitat de frameworks complexos ni instal·lacions pesades:
+Projecte lleuger, sense instal·lacions complexes:
 
-* **HTML5:** Estructura semàntica.
-* **CSS3:** Variables CSS (Custom Properties), Flexbox, Grid i Disseny Responsive.
-* **JavaScript (ES6+):** Lògica del DOM, gestió de l'estat i internacionalització.
+* **HTML5 / CSS3:** Variables CSS per a la gestió de temes i disseny flexible.
+* **JavaScript (ES6+):** Lògica del DOM, `localStorage` per a la persistència i gestió d'estats.
 * **Llibreries Externes:**
     * [FontAwesome](https://fontawesome.com): Icones vectorials.
-    * [Google Fonts (Nunito)](https://fonts.google.com): Tipografia.
-    * [html2canvas](https://html2canvas.hertzen.com/): Per convertir el disseny HTML en imatge descarregable.
+    * [Google Fonts (Nunito)](https://fonts.google.com): Tipografia escolar moderna.
+    * [html2canvas](https://html2canvas.hertzen.com/): Motor de renderitzat d'imatges.
 
 ## 📦 Instal·lació i Ús
 
-No cal instal·lar res! Aquesta aplicació s'executa directament al navegador.
+No cal instal·lar res! Aquesta aplicació s'executa directament al navegador (Chrome, Firefox, Edge, Safari).
 
-1.  **Descarrega** el codi o clona aquest repositori:
-    ```bash
-    git clone [https://github.com/TEU-USUARI/eco-duel.git](https://github.com/TEU-USUARI/eco-duel.git)
-    ```
-2.  Obre l'arxiu `index.html` amb el teu navegador web preferit (Chrome, Firefox, Edge, Safari).
-3.  Comença a crear els teus cromos!
+1.  **Descarrega** el codi o clona aquest repositori.
+2.  Obre l'arxiu `index.html`.
+3.  Comença a crear!
 
 ## 📂 Estructura del Projecte
 
 ```text
 /
-├── index.html      # L'estructura de la pàgina
-├── style.css       # Els estils visuals (colors, disseny)
-├── app.js          # La lògica (traduccions, descàrrega, interactivitat)
+├── index.html      # L'estructura i interfície
+├── style.css       # El disseny visual i animacions
+├── app.js          # La lògica (Auto-save, traduccions, icones)
 ├── LICENSE.txt     # La llicència completa AGPL v3
-└── README.md       # Aquest document
+└── README.md       # Documentació del projecte
+🎓 Objectius Pedagògics
+Eina transversal ideal per treballar:
+
+Classificació dels éssers vius: Regne animal i vegetal, famílies i espècies.
+
+Nivells tròfics: Productors, consumidors i descomponedors.
+
+Competència Digital: Creació de contingut digital, respecte per les llicències i ús d'interfícies.
+
+Adaptabilitat: Gràcies als camps personalitzables, es pot fer servir des de 5è de Primària fins a l'ESO.
+
+📄 Llicències i Autoria
+Aquest projecte promou el coneixement obert i l'ús ètic de la tecnologia a l'escola.
+
+Autoria: David Cordones (2025).
+
+Codi Font: Sota llicència GNU AGPL v3. Pots modificar-lo i redistribuir-lo, però has de mantenir la mateixa llicència i compartir els canvis. Llegir LICENSE.txt.
+
+Continguts i Disseny: Sota llicència Creative Commons BY-SA 4.0. Pots compartir i adaptar el material citant l'autor i compartint-lo igual.
+
+Creat amb ❤️ per a l'educació.
