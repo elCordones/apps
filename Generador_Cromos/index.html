@@ -44,9 +44,17 @@
                     <label data-i18n="nameLabel">Nom</label>
                     <input type="text" id="inp-name" value="Senglar" oninput="updateCard()" placeholder="Ex: Senglar">
                 </div>
+                
                 <div class="form-group">
                     <label data-i18n="groupLabel">Grup / Subtítol</label>
-                    <input type="text" id="inp-sub" value="Mamífer" oninput="updateCard()" placeholder="Ex: Mamífer">
+                    
+                    <select id="inp-sub" onchange="toggleCustomGroup()">
+                        </select>
+
+                    <input type="text" id="inp-sub-custom" 
+                           placeholder="Escriu el grup..." 
+                           style="display: none; margin-top: 5px;" 
+                           oninput="updateCard()">
                 </div>
             </div>
 
