@@ -7,7 +7,6 @@
 Una aplicació web interactiva dissenyada per a l'aula, que permet als alumnes crear cromos personalitzats de flora i fauna. Aquesta eina fomenta la **gamificació** en l'aprenentatge de les Ciències Naturals.
 
 ![Captura de pantalla de l'aplicació](./screenshot_app.png)
-*(Nota: Puja una captura de pantalla de l'app anomenada `screenshot_app.png` al teu repositori perquè es vegi aquí)*
 
 ## 🚀 Característiques Principals
 
