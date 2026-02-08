@@ -180,16 +180,40 @@ input[type=range] { width: 100%; cursor: pointer; accent-color: var(--primary); 
     overflow: hidden;
 }
 
-.instruction-badge {
-    background: #dbeafe;
-    color: #1e40af;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.85em;
-    font-weight: 600;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+/* --- BARRA D'ACCIONS (BOTONS) --- */
+.actions-bar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
 }
+
+.action-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 50px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.action-btn:active { transform: translateY(0); }
+
+.download-btn { background-color: var(--primary); color: white; }
+.download-btn:hover { background-color: var(--primary-hover); }
+
+.copy-btn { background-color: white; color: var(--text-main); border: 2px solid var(--border-color); }
+.copy-btn:hover { border-color: var(--primary); color: var(--primary); }
 
 /* --- CARTA (ESTIL) --- */
 .card {
@@ -209,10 +233,9 @@ input[type=range] { width: 100%; cursor: pointer; accent-color: var(--primary); 
     transition: transform 0.3s ease;
 }
 
-/* Animació suau a la carta */
 .card:hover { transform: translateY(-5px); }
 
-/* Colors dinàmics de la carta */
+/* Colors dinàmics */
 .card[data-type="fauna"] { border-color: var(--fauna-color); background: var(--fauna-bg); }
 .card[data-type="flora"] { border-color: var(--flora-color); background: var(--flora-bg); }
 .card[data-type="fauna"] .header, .card[data-type="fauna"] .trophic-circle { background-color: var(--fauna-color); }
@@ -278,7 +301,7 @@ input[type=range] { width: 100%; cursor: pointer; accent-color: var(--primary); 
     padding: 10px 20px; font-size: 0.9em; font-style: italic;
     color: #4b5563; text-align: center; line-height: 1.4;
     flex-grow: 1; display: flex; align-items: center; justify-content: center;
-    font-family: 'Georgia', serif; /* Font diferent per la "flavor text" */
+    font-family: 'Georgia', serif;
 }
 
 .card-footer {
