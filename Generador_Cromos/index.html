@@ -135,14 +135,39 @@
             <div class="row">
                 <div class="form-group" style="flex: 2;">
                     <label data-i18n="collectionLabel">Col·lecció</label>
-                    <select id="sel-collection" onchange="updateCard()">
-                        <option value="Col·lecció 5è">Col·lecció 5è</option>
-                        <option value="Col·lecció 6è">Col·lecció 6è</option>
+                    
+                    <select id="sel-collection" onchange="toggleCustomCollection()">
+                        <optgroup label="Primària">
+                            <option value="1r Primària">1r Primària</option>
+                            <option value="2n Primària">2n Primària</option>
+                            <option value="3r Primària">3r Primària</option>
+                            <option value="4t Primària">4t Primària</option>
+                            <option value="5è Primària" selected>5è Primària</option>
+                            <option value="6è Primària">6è Primària</option>
+                        </optgroup>
+                        <optgroup label="Secundària (ESO)">
+                            <option value="1r ESO">1r ESO</option>
+                            <option value="2n ESO">2n ESO</option>
+                            <option value="3r ESO">3r ESO</option>
+                            <option value="4t ESO">4t ESO</option>
+                        </optgroup>
+                        <optgroup label="Post-Obligatòria">
+                            <option value="1r Batxillerat">1r Batxillerat</option>
+                            <option value="2n Batxillerat">2n Batxillerat</option>
+                            <option value="FP Bàsica">FP Bàsica</option>
+                        </optgroup>
+                        <option value="custom">✎ Altres / Personalitzat...</option>
                     </select>
+
+                    <input type="text" id="inp-collection-custom" 
+                           placeholder="Nom de la col·lecció..." 
+                           style="display: none; margin-top: 5px;" 
+                           oninput="updateCard()">
                 </div>
+
                 <div class="form-group" style="flex: 1;">
                     <label data-i18n="numberLabel">Número</label>
-                    <input type="number" id="inp-number" value="1" min="1" max="99" oninput="updateCard()">
+                    <input type="number" id="inp-number" value="1" min="1" max="999" oninput="updateCard()">
                 </div>
             </div>
         </div>
@@ -188,12 +213,12 @@
                 <div class="icon-badge"><i class="fas fa-moon" id="out-icon-3"></i></div>
             </div>
             <div class="description-box" id="out-desc">"Té un olfacte increïble."</div>
-            <div class="card-footer" id="out-footer">Col·lecció 5è - #01</div>
+            <div class="card-footer" id="out-footer">5è Primària - #01</div>
         </div>
     </main>
 
     <footer class="app-footer">
-        <div>© David Cordones 2026</div>
+        <div>© David Cordones</div>
         <div>
             Codi: <a href="LICENSE.txt">AGPL v3</a> · 
             Contingut: <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
