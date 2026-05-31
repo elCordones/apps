@@ -1,0 +1,2056 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Organitzador de Taules</title>
+    <!-- PWA Manifest & Icons -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
+    <meta name="theme-color" content="#007aff">
+    <!-- iOS Web App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Taules Class">
+    <style>
+        /* CSS VARIABLES - iOS LIGHT & DARK THEMES */
+        :root {
+            --bg-color: #f2f2f7;
+            --card-bg: #ffffff;
+            --text-color: #000000;
+            --text-secondary: #8e8e93;
+            --accent-color: #007aff;
+            --border-color: #c6c6c8;
+            --input-bg: #e3e3e8;
+            --danger-color: #ff3b30;
+            --danger-bg: #ffe5e5;
+            --success-color: #34c759;
+            --success-bg: #e5f9e7;
+            --warning-color: #ff9500;
+            --warning-bg: #fff2e0;
+            --tab-bar-bg: rgba(255, 255, 255, 0.85);
+            --header-bg: rgba(242, 242, 247, 0.8);
+            --safe-area-top: env(safe-area-inset-top, 0px);
+            --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+            --selected-border: #007aff;
+            --selected-bg: #e0f0ff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #000000;
+                --card-bg: #1c1c1e;
+                --text-color: #ffffff;
+                --text-secondary: #8e8e93;
+                --accent-color: #0a84ff;
+                --border-color: #38383a;
+                --input-bg: #2c2c2e;
+                --danger-color: #ff453a;
+                --danger-bg: #2c0e0e;
+                --success-color: #30d158;
+                --success-bg: #0e2c14;
+                --warning-color: #ff9f0a;
+                --warning-bg: #2c1a00;
+                --tab-bar-bg: rgba(28, 28, 30, 0.85);
+                --header-bg: rgba(0, 0, 0, 0.8);
+                --selected-border: #0a84ff;
+                --selected-bg: #0c2540;
+            }
+        }
+
+        /* GLOBAL STYLES */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding-top: calc(52px + var(--safe-area-top));
+            padding-bottom: calc(65px + var(--safe-area-bottom));
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: calc(52px + var(--safe-area-top));
+            padding-top: var(--safe-area-top);
+            background-color: var(--header-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 0.5px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        header h1 {
+            font-size: 17px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        /* BOTTOM TAB BAR */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: calc(56px + var(--safe-area-bottom));
+            padding-bottom: var(--safe-area-bottom);
+            background-color: var(--tab-bar-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 0.5px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+        }
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 10px;
+            font-weight: 500;
+            text-decoration: none;
+            width: 25%;
+            height: 100%;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+        .tab-item.active {
+            color: var(--accent-color);
+        }
+        .tab-icon {
+            font-size: 20px;
+            margin-bottom: 3px;
+        }
+
+        /* CONTAINER AND SECTIONS */
+        .container {
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .section-view {
+            display: none;
+        }
+        .section-view.active {
+            display: block;
+        }
+
+        /* TYPOGRAPHY & ELEMENTS */
+        h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+        p.subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: -12px;
+            margin-bottom: 20px;
+        }
+
+        /* CARDS */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 0.5px solid var(--border-color);
+        }
+        .card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+
+        /* FORMS & INPUTS */
+        .form-group {
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        input[type="text"], select, textarea {
+            width: 100%;
+            background-color: var(--input-bg);
+            border: none;
+            color: var(--text-color);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px; /* Prevents auto-zoom on iOS */
+            outline: none;
+            font-family: inherit;
+        }
+        textarea {
+            resize: none;
+        }
+        .gender-selector {
+            display: flex;
+            background-color: var(--input-bg);
+            border-radius: 8px;
+            padding: 2px;
+        }
+        .gender-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+        .gender-option.active {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .gender-option.active.boy {
+            color: #007aff;
+        }
+        .gender-option.active.girl {
+            color: #ff2d55;
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            background-color: var(--accent-color);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            text-decoration: none;
+        }
+        .btn:active {
+            opacity: 0.7;
+        }
+        .btn-secondary {
+            background-color: var(--input-bg);
+            color: var(--accent-color);
+            margin-top: 8px;
+        }
+        .btn-danger {
+            background-color: var(--danger-bg);
+            color: var(--danger-color);
+        }
+        .btn-inline {
+            width: auto;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        /* LISTS */
+        .item-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 0.5px solid var(--border-color);
+        }
+        .item-row:last-child {
+            border-bottom: none;
+        }
+        .item-name {
+            font-weight: 500;
+            font-size: 16px;
+        }
+        .item-details {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        .badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 6px;
+            text-transform: uppercase;
+        }
+        .badge-boy {
+            background-color: rgba(0, 122, 255, 0.15);
+            color: #007aff;
+        }
+        .badge-girl {
+            background-color: rgba(255, 45, 85, 0.15);
+            color: #ff2d55;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        /* COUNTERS & TOGGLES */
+        .counter-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--input-bg);
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+        .counter-btn {
+            background-color: var(--card-bg);
+            color: var(--accent-color);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .counter-btn:active {
+            opacity: 0.7;
+        }
+        .counter-val {
+            font-size: 18px;
+            font-weight: 600;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .toggle-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 0;
+        }
+        /* iOS Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 51px;
+            height: 31px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--input-bg);
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 27px;
+            width: 27px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        input:checked + .slider {
+            background-color: #34c759;
+        }
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        /* TABLES RESULTS DISPLAY */
+        .tables-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        @media(min-width: 480px) {
+            .tables-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .table-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            border: 0.5px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .table-header {
+            padding: 10px 14px;
+            background-color: var(--input-bg);
+            border-bottom: 0.5px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .table-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+        .table-size {
+            font-size: 12px;
+            background-color: var(--card-bg);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        .table-body {
+            padding: 8px 12px;
+            min-height: 80px;
+        }
+        .student-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-radius: 8px;
+            margin: 6px 0;
+            background-color: var(--bg-color);
+            border: 1px solid transparent;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .student-pill.selected {
+            border-color: var(--selected-border);
+            background-color: var(--selected-bg);
+        }
+        .student-pill.conflict {
+            border-color: var(--danger-color);
+            background-color: var(--danger-bg);
+        }
+        .student-pill-left {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+        }
+        .student-pill-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-ellipsis: translate;
+            text-overflow: ellipsis;
+        }
+        .pill-gender-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 4px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+        .pill-gender-dot.boy {
+            background-color: #007aff;
+        }
+        .pill-gender-dot.girl {
+            background-color: #ff2d55;
+        }
+        .pill-icons {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        /* ALERTS AND MESSAGES */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.85);
+            color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* SELECTION ACTION BAR */
+        .action-bar {
+            position: fixed;
+            bottom: calc(56px + var(--safe-area-bottom));
+            left: 0;
+            right: 0;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 12px 16px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 99;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        .action-bar.active {
+            display: flex;
+        }
+        .action-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+        .action-bar-btn {
+            background-color: rgba(255,255,255,0.25);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .action-bar-btn:active {
+            background-color: rgba(255,255,255,0.4);
+        }
+
+        /* CHECKBOX LIST FOR HISTORY */
+        .history-item-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 0.5px solid var(--border-color);
+        }
+        .history-item-checkbox:last-child {
+            border-bottom: none;
+        }
+        .history-checkbox-input {
+            width: 22px;
+            height: 22px;
+            border-radius: 11px;
+            border: 2px solid var(--border-color);
+            margin-right: 12px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            outline: none;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .history-checkbox-input:checked {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        .history-checkbox-input:checked::after {
+            content: "✓";
+            color: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* AUTOCOMPLETE DROPDOWN */
+        .autocomplete-container {
+            position: relative;
+        }
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: var(--card-bg);
+            border: 0.5px solid var(--border-color);
+            border-radius: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 50;
+            margin-top: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .autocomplete-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 0.5px solid var(--border-color);
+            font-size: 14px;
+        }
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+        .autocomplete-item:active {
+            background-color: var(--input-bg);
+        }
+
+        .vetos-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .veto-tag {
+            background-color: var(--danger-bg);
+            color: var(--danger-color);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .veto-tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* EMPTY STATES */
+        .empty-state {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-secondary);
+        }
+        .empty-state-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+        .empty-state-text {
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        .tab-btn-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            background-color: var(--input-bg);
+            color: var(--text-secondary);
+            border: none;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        /* PRINT STYLING */
+        @media print {
+            body {
+                padding: 0;
+                background: white;
+                color: black;
+            }
+            header, .tab-bar, .action-bar, .btn, .no-print {
+                display: none !important;
+            }
+            .container {
+                max-width: 100%;
+                padding: 0;
+            }
+            .tables-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+            .table-card {
+                break-inside: avoid;
+                border: 1px solid #ccc;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="headerTitle">Organitzador de Taules</h1>
+    </header>
+
+    <div class="container">
+        
+        <!-- ================== VIEW 1: ALUMNES ================== -->
+        <div id="view-alumnes" class="section-view active">
+            <h2>Gestió d'Alumnes</h2>
+            <p class="subtitle">Afegeix els teus alumnes i defineix els vetos d'incompatibilitat.</p>
+
+            <div class="tab-btn-group">
+                <button class="tab-btn active" id="btn-tab-formulari" onclick="switchStudentTab('formulari')">Individual</button>
+                <button class="tab-btn" id="btn-tab-importar" onclick="switchStudentTab('importar')">Importar Excel/Sheets</button>
+            </div>
+
+            <!-- Individual Form Card -->
+            <div class="card" id="student-individual-card">
+                <h3>Nou Alumne</h3>
+                <div class="form-group">
+                    <label>Nom de l'Alumne</label>
+                    <input type="text" id="student-name" placeholder="Ex: Joan Pou" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Sexe</label>
+                    <div class="gender-selector">
+                        <div class="gender-option boy active" id="gender-boy" onclick="setGender('H')">Noi</div>
+                        <div class="gender-option girl" id="gender-girl" onclick="setGender('D')">Noia</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Afegir Veto (Incompatible)</label>
+                    <div class="autocomplete-container">
+                        <input type="text" id="student-veto-input" placeholder="Comença a escriure el nom..." autocomplete="off">
+                        <div id="autocomplete-list" class="autocomplete-dropdown" style="display: none;"></div>
+                    </div>
+                    <div class="vetos-tags" id="student-vetos-tags"></div>
+                </div>
+                <button class="btn" onclick="saveStudent()">Afegir Alumne</button>
+            </div>
+
+            <!-- Import Textarea Card -->
+            <div class="card" id="student-import-card" style="display: none;">
+                <h3>Importar des de Google Sheets / Excel</h3>
+                <p class="subtitle" style="margin-top:0; margin-bottom:12px;">Copia les columnes del teu full de càlcul (Nom | Sexe | Vetos) i enganxa-les aquí. Els vetos han d'estar separats per comes.</p>
+                <div class="form-group">
+                    <textarea id="import-raw" rows="6" placeholder="Joan Pou	H	Maria Vila, Pere Sol&#10;Maria Vila	D&#10;Pere Sol	H	Joan Pou"></textarea>
+                </div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
+                    * Sexe acceptat: <strong>H, Noi, Boy, M, Male</strong> (Noi) o <strong>D, Noia, Girl, F, Female</strong> (Noia).
+                </div>
+                <button class="btn" onclick="importStudentsList()">Processar i Importar</button>
+            </div>
+
+            <!-- List Card -->
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h3 style="margin:0;">Llista d'Alumnes (<span id="student-count">0</span>)</h3>
+                    <button class="btn btn-inline btn-danger" onclick="clearAllStudents()">Netejar Llista</button>
+                </div>
+                <div id="students-empty" class="empty-state">
+                    <div class="empty-state-icon">👥</div>
+                    <div class="empty-state-text">No hi ha alumnes a la llista. Afegeix-ne o importa'ls.</div>
+                </div>
+                <ul class="item-list" id="students-list">
+                    <!-- Dinàmic -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- ================== VIEW 2: CONFIGURACIÓ ================== -->
+        <div id="view-configuracio" class="section-view">
+            <h2>Configuració del Grup</h2>
+            <p class="subtitle">Estableix la mida de les taules i les regles de generació.</p>
+
+            <div class="card">
+                <h3>Places per Taula</h3>
+                <p class="subtitle" style="margin-top:0; margin-bottom:12px;">El nombre d'alumnes que s'asseuran a cada taula.</p>
+                <div class="counter-control">
+                    <button class="counter-btn" onclick="changeTableSize(-1)">-</button>
+                    <span class="counter-val" id="table-size-val">4</span>
+                    <button class="counter-btn" onclick="changeTableSize(1)">+</button>
+                </div>
+                <div id="table-distribution-preview" style="font-size: 13px; color: var(--text-secondary); margin-top: 10px;">
+                    <!-- Dinàmic -->
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Regles i Distribucions</h3>
+                <div class="toggle-control" style="margin-bottom: 12px;">
+                    <div>
+                        <div style="font-weight:600; font-size: 15px;">Taules Mixtes</div>
+                        <div style="font-size:12px; color:var(--text-secondary);">Equilibra la ràtio nois/noies a cada taula</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="rule-mixtes" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="card" id="history-avoidance-card">
+                <h3>Evitar Repetir Combinacions</h3>
+                <p class="subtitle" style="margin-top:0; margin-bottom:12px;">Selecciona les sessions passades amb les que no vols repetir parelles a la mateixa taula.</p>
+                
+                <div id="history-checkbox-list">
+                    <!-- Dinàmic -->
+                </div>
+                <div id="history-empty-rules" class="empty-state" style="padding: 16px 0;">
+                    <div class="empty-state-text" style="font-size:13px;">No tens sessions guardades a l'historial.</div>
+                </div>
+            </div>
+
+            <button class="btn" onclick="generateGroups()">Generar Taules</button>
+        </div>
+
+        <!-- ================== VIEW 3: RESULTATS ================== -->
+        <div id="view-resultats" class="section-view">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <h2 style="margin:0;">Taules Generades</h2>
+                <button class="btn btn-inline btn-secondary" onclick="generateGroups()" style="margin:0; width:auto; padding: 6px 12px;">Regenerar</button>
+            </div>
+            <p class="subtitle" style="margin-bottom:16px;">Prem un alumne per seleccionar-lo, i després un altre per intercanviar-los de taula.</p>
+
+            <div id="results-warnings" style="margin-bottom: 12px;"></div>
+
+            <div class="tables-grid" id="tables-container">
+                <!-- Dinàmic -->
+            </div>
+
+            <div class="card" style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
+                <h3>Guardar i Compartir</h3>
+                <div class="form-group" style="margin-bottom:8px;">
+                    <label>Nom de la sessió</label>
+                    <input type="text" id="session-save-name" placeholder="Ex: Projecte Maig o Taules 3r Trimestre">
+                </div>
+                <button class="btn btn-inline" onclick="saveSessionToHistory()">Guardar a l'Historial</button>
+                <div style="display:flex; gap: 8px;">
+                    <button class="btn btn-inline btn-secondary" style="flex:1;" onclick="copyWhatsAppText()">Copiar Text per WhatsApp</button>
+                    <button class="btn btn-inline btn-secondary" style="flex:1;" onclick="window.print()">Imprimir / PDF</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================== VIEW 4: HISTORIAL ================== -->
+        <div id="view-historial" class="section-view">
+            <h2>Historial de Sessions</h2>
+            <p class="subtitle">Gestiona les plantilles de taules guardades anteriorment.</p>
+
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h3 style="margin:0;">Sessions Guardades</h3>
+                    <button class="btn btn-inline btn-danger" onclick="clearAllHistory()">Esborrar Tot</button>
+                </div>
+
+                <div id="history-empty" class="empty-state">
+                    <div class="empty-state-icon">📂</div>
+                    <div class="empty-state-text">L'historial està buit.</div>
+                </div>
+
+                <ul class="item-list" id="history-sessions-list">
+                    <!-- Dinàmic -->
+                </ul>
+            </div>
+
+            <!-- Còpia de Seguretat (Local-First Backup) -->
+            <div class="card no-print">
+                <h3>Còpia de Seguretat (Local)</h3>
+                <p class="subtitle" style="margin-top:0; margin-bottom:12px;">Desa les teves dades en un fitxer o restaura-les de forma 100% privada i local.</p>
+                <div style="display:flex; gap: 8px;">
+                    <button class="btn btn-inline btn-secondary" style="flex:1; margin:0;" onclick="exportBackupData()">Exportar JSON</button>
+                    <button class="btn btn-inline btn-secondary" style="flex:1; margin:0;" onclick="triggerImportBackup()">Importar JSON</button>
+                </div>
+                <input type="file" id="import-backup-file" accept=".json" style="display:none;" onchange="importBackupData(event)">
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SELECTION ACTION BAR (iOS style) -->
+    <div class="action-bar" id="selection-action-bar">
+        <span class="action-text" id="action-bar-text">Alumne seleccionat: Joan</span>
+        <div class="action-btns">
+            <button class="action-bar-btn" onclick="clearSelection()">Cancel·la</button>
+        </div>
+    </div>
+
+    <!-- BOTTOM TAB BAR -->
+    <div class="tab-bar">
+        <button class="tab-item active" onclick="switchView('alumnes')">
+            <span class="tab-icon">👥</span>
+            <span>Alumnes</span>
+        </button>
+        <button class="tab-item" onclick="switchView('configuracio')">
+            <span class="tab-icon">⚙️</span>
+            <span>Configurar</span>
+        </button>
+        <button class="tab-item" onclick="switchView('resultats')" id="tab-resultats">
+            <span class="tab-icon">🪑</span>
+            <span>Taules</span>
+        </button>
+        <button class="tab-item" onclick="switchView('historial')">
+            <span class="tab-icon">📂</span>
+            <span>Historial</span>
+        </button>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast" id="toast-el">Missatge</div>
+
+    <script>
+        // --- APP STATE ---
+        let students = [];
+        let config = {
+            tableSize: 4,
+            mixtes: true,
+            avoidHistoryIds: []
+        };
+        let currentGender = 'H';
+        let currentVetos = [];
+        let assignments = []; // Array of arrays of student objects
+        let historySessions = [];
+        let selectedStudentForSwap = null; // Stores {studentId, tableIdx}
+
+        // --- LOCAL STORAGE KEY NAMES ---
+        const ST_KEY_STUDENTS = 'taules_students_list';
+        const ST_KEY_CONFIG = 'taules_config';
+        const ST_KEY_HISTORY = 'taules_history';
+        const ST_KEY_ASSIGNMENT = 'taules_current_assignment';
+
+        // --- INIT APP ---
+        window.addEventListener('load', () => {
+            loadFromLocalStorage();
+            updateStudentsUI();
+            updateConfigUI();
+            updateHistoryUI();
+            
+            if (assignments && assignments.length > 0) {
+                renderAssignments();
+            } else {
+                document.getElementById('tab-resultats').style.opacity = '0.5';
+            }
+
+            // Setup Autocomplete for Vetos
+            setupVetoAutocomplete();
+
+            // Register Service Worker for offline support (PWA)
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                    .then((reg) => console.log('Service Worker registrat amb èxit:', reg.scope))
+                    .catch((err) => console.error('Error en registrar el Service Worker:', err));
+            }
+        });
+
+        // --- LOCAL STORAGE GESTIÓ ---
+        function saveToLocalStorage() {
+            localStorage.setItem(ST_KEY_STUDENTS, JSON.stringify(students));
+            localStorage.setItem(ST_KEY_CONFIG, JSON.stringify(config));
+            localStorage.setItem(ST_KEY_HISTORY, JSON.stringify(historySessions));
+            localStorage.setItem(ST_KEY_ASSIGNMENT, JSON.stringify(assignments));
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const s = localStorage.getItem(ST_KEY_STUDENTS);
+                if (s) students = JSON.parse(s);
+
+                const c = localStorage.getItem(ST_KEY_CONFIG);
+                if (c) {
+                    config = JSON.parse(c);
+                    if (!config.avoidHistoryIds) config.avoidHistoryIds = [];
+                }
+
+                const h = localStorage.getItem(ST_KEY_HISTORY);
+                if (h) historySessions = JSON.parse(h);
+
+                const a = localStorage.getItem(ST_KEY_ASSIGNMENT);
+                if (a) assignments = JSON.parse(a);
+            } catch (err) {
+                console.error("Error loading localStorage data", err);
+            }
+        }
+
+        // --- VIEW SWITCHING ---
+        function switchView(viewId) {
+            document.querySelectorAll('.section-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            const activeView = document.getElementById(`view-${viewId}`);
+            if (activeView) activeView.classList.add('active');
+
+            // Find matching tab button
+            const tabBtn = Array.from(document.querySelectorAll('.tab-item')).find(btn => 
+                btn.getAttribute('onclick').includes(viewId)
+            );
+            if (tabBtn) tabBtn.classList.add('active');
+
+            // Header title updates
+            const titles = {
+                'alumnes': 'Gestió d\'Alumnes',
+                'configuracio': 'Configuració del Grup',
+                'resultats': 'Distribució de Taules',
+                'historial': 'Historial de Sessions'
+            };
+            document.getElementById('headerTitle').innerText = titles[viewId] || 'Organitzador de Taules';
+
+            // Clean any selections if moving away from results
+            if (viewId !== 'resultats') {
+                clearSelection();
+            }
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        function switchStudentTab(tab) {
+            const btnForm = document.getElementById('btn-tab-formulari');
+            const btnImport = document.getElementById('btn-tab-importar');
+            const formCard = document.getElementById('student-individual-card');
+            const importCard = document.getElementById('student-import-card');
+
+            if (tab === 'formulari') {
+                btnForm.classList.add('active');
+                btnImport.classList.remove('active');
+                formCard.style.display = 'block';
+                importCard.style.display = 'none';
+            } else {
+                btnForm.classList.remove('active');
+                btnImport.classList.add('active');
+                formCard.style.display = 'none';
+                importCard.style.display = 'block';
+            }
+        }
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(message) {
+            const toast = document.getElementById('toast-el');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        // --- STUDENT MANAGEMENT ---
+        function setGender(gender) {
+            currentGender = gender;
+            document.getElementById('gender-boy').classList.toggle('active', gender === 'H');
+            document.getElementById('gender-girl').classList.toggle('active', gender === 'D');
+        }
+
+        function setupVetoAutocomplete() {
+            const input = document.getElementById('student-veto-input');
+            const list = document.getElementById('autocomplete-list');
+
+            input.addEventListener('input', () => {
+                const query = input.value.trim().toLowerCase();
+                list.innerHTML = '';
+                
+                if (!query) {
+                    list.style.display = 'none';
+                    return;
+                }
+
+                // Filter students who are not the current student name and not already in currentVetos
+                const currentNameInput = document.getElementById('student-name').value.trim();
+                const filtered = students.filter(s => 
+                    s.name.toLowerCase().includes(query) && 
+                    s.name.toLowerCase() !== currentNameInput.toLowerCase() &&
+                    !currentVetos.some(v => v.toLowerCase() === s.name.toLowerCase())
+                );
+
+                if (filtered.length === 0) {
+                    list.style.display = 'none';
+                    return;
+                }
+
+                filtered.forEach(s => {
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    item.innerText = s.name;
+                    item.addEventListener('click', () => {
+                        addVetoTag(s.name);
+                        input.value = '';
+                        list.style.display = 'none';
+                    });
+                    list.appendChild(item);
+                });
+
+                list.style.display = 'block';
+            });
+
+            // Close list when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.autocomplete-container')) {
+                    list.style.display = 'none';
+                }
+            });
+        }
+
+        function addVetoTag(name) {
+            name = name.trim();
+            if (!name) return;
+            if (currentVetos.some(v => v.toLowerCase() === name.toLowerCase())) return;
+
+            currentVetos.push(name);
+            renderVetoTags();
+        }
+
+        function renderVetoTags() {
+            const container = document.getElementById('student-vetos-tags');
+            container.innerHTML = '';
+            currentVetos.forEach((v, index) => {
+                const tag = document.createElement('span');
+                tag.className = 'veto-tag';
+                tag.innerHTML = `${v} <span class="veto-tag-remove" onclick="removeVetoTag(${index})">×</span>`;
+                container.appendChild(tag);
+            });
+        }
+
+        function removeVetoTag(index) {
+            currentVetos.splice(index, 1);
+            renderVetoTags();
+        }
+
+        function saveStudent() {
+            const nameInput = document.getElementById('student-name');
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                showToast("Si us plau, introdueix un nom.");
+                return;
+            }
+
+            // Check duplicates
+            if (students.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+                showToast("Aquest alumne ja és a la llista.");
+                return;
+            }
+
+            const newStudent = {
+                id: 'std_' + Math.random().toString(36).substr(2, 9),
+                name: name,
+                gender: currentGender,
+                vetos: [...currentVetos]
+            };
+
+            students.push(newStudent);
+            
+            // Clean fields
+            nameInput.value = '';
+            currentVetos = [];
+            renderVetoTags();
+
+            saveToLocalStorage();
+            updateStudentsUI();
+            updateConfigUI();
+            showToast("Alumne afegit!");
+        }
+
+        function deleteStudent(id) {
+            const index = students.findIndex(s => s.id === id);
+            if (index !== -1) {
+                const deletedName = students[index].name;
+                students.splice(index, 1);
+
+                // Also clean vetos from other students referring to this name
+                students.forEach(s => {
+                    s.vetos = s.vetos.filter(v => v.toLowerCase() !== deletedName.toLowerCase());
+                });
+
+                saveToLocalStorage();
+                updateStudentsUI();
+                updateConfigUI();
+                showToast("Alumne eliminat.");
+            }
+        }
+
+        function clearAllStudents() {
+            if (confirm("Vols eliminar TOTS els alumnes de la llista? Aquesta acció no es pot desfer.")) {
+                students = [];
+                assignments = [];
+                saveToLocalStorage();
+                updateStudentsUI();
+                updateConfigUI();
+                document.getElementById('tab-resultats').style.opacity = '0.5';
+                showToast("Llista d'alumnes buidada.");
+            }
+        }
+
+        function updateStudentsUI() {
+            const list = document.getElementById('students-list');
+            const empty = document.getElementById('students-empty');
+            const count = document.getElementById('student-count');
+
+            list.innerHTML = '';
+            count.innerText = students.length;
+
+            if (students.length === 0) {
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+
+            // Sort students alphabetically
+            const sortedStudents = [...students].sort((a,b) => a.name.localeCompare(b.name));
+
+            sortedStudents.forEach(s => {
+                const li = document.createElement('li');
+                li.className = 'item-row';
+
+                const genderSymbol = s.gender === 'H' ? 'Boy' : 'Girl';
+                const genderBadge = s.gender === 'H' ? 'badge-boy' : 'badge-girl';
+                const genderText = s.gender === 'H' ? 'Noi' : 'Noia';
+
+                const vetosText = s.vetos.length > 0 ? `Vetos: ${s.vetos.join(', ')}` : 'Sense vetos';
+
+                li.innerHTML = `
+                    <div>
+                        <div class="item-name">
+                            ${s.name}
+                            <span class="badge ${genderBadge}">${genderText}</span>
+                        </div>
+                        <div class="item-details">${vetosText}</div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteStudent('${s.id}')">🗑️</button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        // --- BULK IMPORT ---
+        function importStudentsList() {
+            const rawText = document.getElementById('import-raw').value.trim();
+            if (!rawText) {
+                showToast("El camp està buit!");
+                return;
+            }
+
+            const lines = rawText.split('\n');
+            let importedCount = 0;
+            let duplicatesCount = 0;
+
+            lines.forEach(line => {
+                const parts = line.split('\t'); // Try tab separator
+                let name = '';
+                let genderVal = 'H';
+                let vetosStr = '';
+
+                if (parts.length >= 2) {
+                    name = parts[0].trim();
+                    genderVal = parts[1].trim();
+                    if (parts.length >= 3) {
+                        vetosStr = parts[2].trim();
+                    }
+                } else {
+                    // Try comma separator if tab didn't work
+                    const commaParts = line.split(',');
+                    if (commaParts.length >= 2) {
+                        name = commaParts[0].trim();
+                        genderVal = commaParts[1].trim();
+                        if (commaParts.length >= 3) {
+                            vetosStr = commaParts.slice(2).join(',').trim();
+                        }
+                    } else {
+                        // Fallback: name only
+                        name = line.trim();
+                    }
+                }
+
+                if (!name) return;
+
+                // Check duplicate
+                if (students.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+                    duplicatesCount++;
+                    return;
+                }
+
+                // Resolve gender
+                let resolvedGender = 'H';
+                const gUpper = genderVal.toUpperCase();
+                if (['D', 'NOIA', 'GIRL', 'F', 'FEMALE', 'DONA', 'FEMENÍ', 'FEMENI', 'MASCARA'].includes(gUpper) || gUpper.startsWith('NOIA') || gUpper.startsWith('DON') || gUpper.startsWith('FEM')) {
+                    resolvedGender = 'D';
+                }
+
+                // Parse vetos
+                const vetos = vetosStr ? vetosStr.split(',').map(v => v.trim()).filter(v => v.length > 0) : [];
+
+                students.push({
+                    id: 'std_' + Math.random().toString(36).substr(2, 9),
+                    name: name,
+                    gender: resolvedGender,
+                    vetos: vetos
+                });
+                importedCount++;
+            });
+
+            // Re-validate and clean vetos lists (ensure vetos refer to existing or imported student names)
+            // Note: Pedagogically, we don't block vetos to names that don't exist yet because they might be imported next, but we keep them clean.
+
+            document.getElementById('import-raw').value = '';
+            saveToLocalStorage();
+            updateStudentsUI();
+            updateConfigUI();
+            switchStudentTab('formulari');
+            
+            let resultMsg = `S'han importat ${importedCount} alumnes.`;
+            if (duplicatesCount > 0) resultMsg += ` (${duplicatesCount} duplicats ignorats)`;
+            showToast(resultMsg);
+        }
+
+        // --- CONFIGURATION ---
+        function changeTableSize(amount) {
+            let size = config.tableSize + amount;
+            if (size < 2) size = 2;
+            if (size > 15) size = 15;
+            config.tableSize = size;
+            saveToLocalStorage();
+            updateConfigUI();
+        }
+
+        function updateConfigUI() {
+            document.getElementById('table-size-val').innerText = config.tableSize;
+            document.getElementById('rule-mixtes').checked = config.mixtes;
+
+            // Update preview of table sizes
+            const previewEl = document.getElementById('table-distribution-preview');
+            const total = students.length;
+            if (total === 0) {
+                previewEl.innerText = "Afegeix alumnes per veure la distribució esperada.";
+                return;
+            }
+
+            const size = config.tableSize;
+            const fullTablesCount = Math.floor(total / size);
+            const remainder = total % size;
+
+            let msg = `Distribució de ${total} alumnes: `;
+            if (remainder === 0) {
+                msg += `<strong>${fullTablesCount}</strong> taules de <strong>${size}</strong> places.`;
+            } else {
+                msg += `<strong>${fullTablesCount}</strong> taules de <strong>${size}</strong> i <strong>1</strong> taula de sobrants amb <strong>${remainder}</strong> places.`;
+            }
+            previewEl.innerHTML = msg;
+
+            // Update History Selection Checklist
+            renderHistoryChecklist();
+        }
+
+        // --- HISTORY MANAGEMENT ---
+        function renderHistoryChecklist() {
+            const container = document.getElementById('history-checkbox-list');
+            const empty = document.getElementById('history-empty-rules');
+            
+            container.innerHTML = '';
+            
+            if (historySessions.length === 0) {
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+
+            historySessions.forEach(session => {
+                const div = document.createElement('div');
+                div.className = 'history-item-checkbox';
+
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.className = 'history-checkbox-input';
+                input.value = session.id;
+                input.checked = config.avoidHistoryIds.includes(session.id);
+                
+                input.addEventListener('change', () => {
+                    if (input.checked) {
+                        if (!config.avoidHistoryIds.includes(session.id)) {
+                            config.avoidHistoryIds.push(session.id);
+                        }
+                    } else {
+                        config.avoidHistoryIds = config.avoidHistoryIds.filter(id => id !== session.id);
+                    }
+                    saveToLocalStorage();
+                });
+
+                const label = document.createElement('label');
+                label.style.cursor = 'pointer';
+                label.style.fontSize = '14px';
+                label.style.fontWeight = '500';
+                
+                const dateStr = new Date(session.date).toLocaleDateString('ca-ES', {day: 'numeric', month: 'short'});
+                label.innerHTML = `<strong>${session.name}</strong> <span style="color:var(--text-secondary); font-size:12px;">(${dateStr} • ${session.tablesCount} taules)</span>`;
+
+                div.appendChild(input);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+        }
+
+        function updateHistoryUI() {
+            const container = document.getElementById('history-sessions-list');
+            const empty = document.getElementById('history-empty');
+
+            container.innerHTML = '';
+
+            if (historySessions.length === 0) {
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+
+            // Sort history by date descending
+            const sortedHistory = [...historySessions].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            sortedHistory.forEach(session => {
+                const li = document.createElement('li');
+                li.className = 'item-row';
+                
+                const dateStr = new Date(session.date).toLocaleString('ca-ES', {
+                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                });
+
+                // Compute total students in session
+                const totalStudentsInSession = session.assignments.reduce((sum, tab) => sum + tab.length, 0);
+
+                li.innerHTML = `
+                    <div>
+                        <div class="item-name">${session.name}</div>
+                        <div class="item-details">${dateStr} • ${session.assignments.length} taules • ${totalStudentsInSession} alumnes</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap: 8px;">
+                        <button class="btn btn-inline btn-secondary" style="padding: 6px 10px; margin: 0; font-size:12px;" onclick="restoreSession('${session.id}')">Carrega</button>
+                        <button class="delete-btn" onclick="deleteHistorySession('${session.id}')">🗑️</button>
+                    </div>
+                `;
+                container.appendChild(li);
+            });
+        }
+
+        function deleteHistorySession(id) {
+            if (confirm("Vols eliminar aquesta sessió de l'historial? Això afectarà l'evitació de combinacions si estava seleccionada.")) {
+                historySessions = historySessions.filter(s => s.id !== id);
+                config.avoidHistoryIds = config.avoidHistoryIds.filter(hid => hid !== id);
+                saveToLocalStorage();
+                updateHistoryUI();
+                updateConfigUI();
+                showToast("Sessió de l'historial eliminada.");
+            }
+        }
+
+        function clearAllHistory() {
+            if (confirm("Vols esborrar TOT l'historial de sessions? Aquesta acció no es pot desfer.")) {
+                historySessions = [];
+                config.avoidHistoryIds = [];
+                saveToLocalStorage();
+                updateHistoryUI();
+                updateConfigUI();
+                showToast("Historial completament buidat.");
+            }
+        }
+
+        function restoreSession(id) {
+            const session = historySessions.find(s => s.id === id);
+            if (session) {
+                // Reconstruct students from session if they are deleted, or try to map.
+                // It is simpler to just load the assignments as they were!
+                assignments = session.assignments;
+                saveToLocalStorage();
+                renderAssignments();
+                document.getElementById('tab-resultats').style.opacity = '1';
+                switchView('resultats');
+                showToast(`Carregada sessió: ${session.name}`);
+            }
+        }
+
+        // --- OPTIMIZATION ALGORITHM (HILL CLIMBING) ---
+        function generateGroups() {
+            if (students.length === 0) {
+                showToast("Afegeix alumnes abans de generar grups.");
+                switchView('alumnes');
+                return;
+            }
+
+            config.mixtes = document.getElementById('rule-mixtes').checked;
+            saveToLocalStorage();
+
+            const N = config.tableSize;
+            const total = students.length;
+            const tableCapacities = [];
+            
+            // Build table sizes: N, N, N ... Remainder
+            const fullCount = Math.floor(total / N);
+            const remainder = total % N;
+
+            for (let i = 0; i < fullCount; i++) {
+                tableCapacities.push(N);
+            }
+            if (remainder > 0) {
+                tableCapacities.push(remainder);
+            }
+
+            // Build co-occurrence matrix from avoided sessions in history
+            const cooccurrence = buildCooccurrenceMatrix();
+
+            // Setup variables for Hill Climbing
+            // Each table is { students: [], capacity: X }
+            let bestAssignment = tableCapacities.map(cap => ({ students: [], capacity: cap }));
+            
+            // Initial random assignment
+            let tempStudents = [...students];
+            // Shuffle
+            tempStudents.sort(() => Math.random() - 0.5);
+
+            let studentIdx = 0;
+            bestAssignment.forEach(table => {
+                while (table.students.length < table.capacity && studentIdx < tempStudents.length) {
+                    table.students.push(tempStudents[studentIdx++]);
+                }
+            });
+
+            // Hill Climbing Optimization
+            let bestScore = getObjectiveScore(bestAssignment, cooccurrence);
+            const maxIterations = 10000;
+            let currentAssignment = JSON.parse(JSON.stringify(bestAssignment));
+
+            for (let iter = 0; iter < maxIterations; iter++) {
+                // Select two random tables
+                const t1 = Math.floor(Math.random() * currentAssignment.length);
+                const t2 = Math.floor(Math.random() * currentAssignment.length);
+                if (t1 === t2) continue;
+
+                const table1 = currentAssignment[t1];
+                const table2 = currentAssignment[t2];
+
+                // Select a random slot in each table (could be null if table is not full, but here they are always full to capacity)
+                const s1Idx = Math.floor(Math.random() * table1.students.length);
+                const s2Idx = Math.floor(Math.random() * table2.students.length);
+
+                const s1 = table1.students[s1Idx];
+                const s2 = table2.students[s2Idx];
+
+                // Swap students
+                table1.students[s1Idx] = s2;
+                table2.students[s2Idx] = s1;
+
+                const currentScore = getObjectiveScore(currentAssignment, cooccurrence);
+
+                if (currentScore > bestScore) {
+                    bestScore = currentScore;
+                    bestAssignment = JSON.parse(JSON.stringify(currentAssignment));
+                } else {
+                    // Backtrack
+                    table1.students[s1Idx] = s1;
+                    table2.students[s2Idx] = s2;
+                }
+            }
+
+            // Convert to clean array of arrays format for assignments state
+            assignments = bestAssignment.map(table => table.students);
+            
+            saveToLocalStorage();
+            renderAssignments();
+            document.getElementById('tab-resultats').style.opacity = '1';
+            switchView('resultats');
+            showToast("Taules creades amb èxit!");
+        }
+
+        // Build co-occurrence matrix of names for selected historical sessions
+        function buildCooccurrenceMatrix() {
+            const matrix = {};
+            const activeSessionIds = config.avoidHistoryIds;
+
+            historySessions.forEach(session => {
+                if (!activeSessionIds.includes(session.id)) return;
+
+                session.assignments.forEach(table => {
+                    for (let i = 0; i < table.length; i++) {
+                        const nameI = table[i].name.toLowerCase().trim();
+                        if (!matrix[nameI]) matrix[nameI] = {};
+
+                        for (let j = 0; j < table.length; j++) {
+                            if (i === j) continue;
+                            const nameJ = table[j].name.toLowerCase().trim();
+                            matrix[nameI][nameJ] = (matrix[nameI][nameJ] || 0) + 1;
+                        }
+                    }
+                });
+            });
+
+            return matrix;
+        }
+
+        // Objective Function to Maximize
+        function getObjectiveScore(assignment, cooccurrence) {
+            let score = 0;
+            const useMixtes = config.mixtes;
+
+            // Precalculate global proportions for gender balance
+            let totalBoys = 0;
+            let totalGirls = 0;
+            students.forEach(s => {
+                if (s.gender === 'H') totalBoys++;
+                else totalGirls++;
+            });
+            const totalStudents = students.length || 1;
+            const targetRatioBoys = totalBoys / totalStudents;
+
+            assignment.forEach(table => {
+                const size = table.students.length;
+                if (size <= 1) return;
+
+                let tableBoys = 0;
+                let tableGirls = 0;
+
+                // 1. Check Vetos and Historic Repetitions
+                for (let i = 0; i < size; i++) {
+                    const sI = table.students[i];
+                    if (sI.gender === 'H') tableBoys++;
+                    else tableGirls++;
+
+                    const nameILower = sI.name.toLowerCase().trim();
+
+                    for (let j = i + 1; j < size; j++) {
+                        const sJ = table.students[j];
+                        const nameJLower = sJ.name.toLowerCase().trim();
+
+                        // Check Vetos in both directions (I vetos J OR J vetos I)
+                        const iVetosJ = sI.vetos.some(v => v.toLowerCase().trim() === nameJLower);
+                        const jVetosI = sJ.vetos.some(v => v.toLowerCase().trim() === nameILower);
+
+                        if (iVetosJ || jVetosI) {
+                            score -= 100000; // Large penalty for veto conflict
+                        }
+
+                        // Check Historic Repetition
+                        if (cooccurrence[nameILower] && cooccurrence[nameILower][nameJLower]) {
+                            const times = cooccurrence[nameILower][nameJLower];
+                            score -= times * 2000; // Severe penalty per repetition to enforce mixing
+                        }
+                    }
+                }
+
+                // 2. Gender Balancing (Mixtes)
+                if (useMixtes && totalBoys > 0 && totalGirls > 0) {
+                    const expectedBoys = size * targetRatioBoys;
+                    const diff = Math.abs(tableBoys - expectedBoys);
+                    // Penalize deviation from the optimal ratio
+                    score -= diff * 1000;
+                }
+            });
+
+            return score;
+        }
+
+        // --- RESULTS RENDERING & TOUCH INTERACTIVITY ---
+        function renderAssignments() {
+            const container = document.getElementById('tables-container');
+            const warningsDiv = document.getElementById('results-warnings');
+            
+            container.innerHTML = '';
+            warningsDiv.innerHTML = '';
+
+            if (assignments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <div class="empty-state-icon">🪑</div>
+                        <div class="empty-state-text">No s'ha generat cap distribució de taules encara.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Build co-occurrence matrix to check for repetitions visually
+            const cooccurrence = buildCooccurrenceMatrix();
+            let totalVetoConflicts = 0;
+            let totalRepetitions = 0;
+
+            assignments.forEach((table, tableIdx) => {
+                const card = document.createElement('div');
+                card.className = 'table-card';
+
+                const tableHeader = document.createElement('div');
+                tableHeader.className = 'table-header';
+                tableHeader.innerHTML = `
+                    <span class="table-title">Taula ${tableIdx + 1}</span>
+                    <span class="table-size">${table.length} alumnes</span>
+                `;
+                card.appendChild(tableHeader);
+
+                const tableBody = document.createElement('div');
+                tableBody.className = 'table-body';
+                tableBody.dataset.tableIdx = tableIdx;
+
+                // Handle drop / select target click on the table empty area
+                tableBody.addEventListener('click', (e) => {
+                    // Only trigger if clicking empty space or tableBody container itself
+                    if (e.target === tableBody || e.target.classList.contains('table-body')) {
+                        handleTableBodyClick(tableIdx);
+                    }
+                });
+
+                table.forEach(student => {
+                    // Check conflicts for this student in this table
+                    const hasVeto = hasVetoConflictInTable(student, table);
+                    const repeatedPartners = getRepeatedPartnersInTable(student, table, cooccurrence);
+                    
+                    if (hasVeto) totalVetoConflicts++;
+                    if (repeatedPartners.length > 0) totalRepetitions++;
+
+                    const pill = document.createElement('div');
+                    pill.className = `student-pill ${hasVeto ? 'conflict' : ''}`;
+                    if (selectedStudentForSwap && selectedStudentForSwap.studentId === student.id) {
+                        pill.classList.add('selected');
+                    }
+
+                    const genderClass = student.gender === 'H' ? 'boy' : 'girl';
+                    
+                    let badgesHtml = '';
+                    if (hasVeto) {
+                        badgesHtml += '<span class="badge" style="background-color:rgba(255, 59, 48, 0.15); color:var(--danger-color);">VETO</span>';
+                    }
+                    if (repeatedPartners.length > 0) {
+                        badgesHtml += `<span class="badge" style="background-color:var(--warning-bg); color:var(--warning-color);" title="Repeteix amb: ${repeatedPartners.join(', ')}">REPETEIX</span>`;
+                    }
+
+                    pill.innerHTML = `
+                        <div class="student-pill-left">
+                            <span class="pill-gender-dot ${genderClass}"></span>
+                            <span class="student-pill-name">${student.name}</span>
+                        </div>
+                        <div class="pill-icons">
+                            ${badgesHtml}
+                        </div>
+                    `;
+
+                    // Touch/Click interaction for Swap
+                    pill.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent trigger tableBody click
+                        handleStudentPillClick(student.id, tableIdx);
+                    });
+
+                    tableBody.appendChild(pill);
+                });
+
+                card.appendChild(tableBody);
+                container.appendChild(card);
+            });
+
+            // Render warning headers if conflicts exist
+            if (totalVetoConflicts > 0 || totalRepetitions > 0) {
+                const alertCard = document.createElement('div');
+                alertCard.className = 'card';
+                alertCard.style.backgroundColor = 'var(--danger-bg)';
+                alertCard.style.color = 'var(--danger-color)';
+                alertCard.style.border = '0.5px solid var(--danger-color)';
+                alertCard.style.padding = '12px';
+                alertCard.style.marginBottom = '16px';
+                
+                let warningHtml = '<strong>⚠️ Avís de Conflicte:</strong>';
+                if (totalVetoConflicts > 0) {
+                    warningHtml += `<br>• S'ha detectat un veto incompatible (marcat en vermell). Arrossega o intercanvia l'alumne per solucionar-ho.`;
+                }
+                if (totalRepetitions > 0) {
+                    warningHtml += `<br>• Hi ha alumnes que comparteixen taula amb companys de sessions anteriors marcades.`;
+                }
+                alertCard.innerHTML = warningHtml;
+                warningsDiv.appendChild(alertCard);
+            }
+        }
+
+        function hasVetoConflictInTable(student, table) {
+            const nameLower = student.name.toLowerCase().trim();
+            return table.some(other => {
+                if (other.id === student.id) return false;
+                const otherNameLower = other.name.toLowerCase().trim();
+                
+                // Student vetos other OR other vetos student
+                const studentVetosOther = student.vetos.some(v => v.toLowerCase().trim() === otherNameLower);
+                const otherVetosStudent = other.vetos.some(v => v.toLowerCase().trim() === nameLower);
+
+                return studentVetosOther || otherVetosStudent;
+            });
+        }
+
+        function getRepeatedPartnersInTable(student, table, cooccurrence) {
+            const repeated = [];
+            const nameLower = student.name.toLowerCase().trim();
+
+            if (!cooccurrence[nameLower]) return repeated;
+
+            table.forEach(other => {
+                if (other.id === student.id) return;
+                const otherNameLower = other.name.toLowerCase().trim();
+                if (cooccurrence[nameLower][otherNameLower]) {
+                    repeated.push(other.name);
+                }
+            });
+
+            return repeated;
+        }
+
+        // INTERACTION: STUDENT PILL CLICKED
+        function handleStudentPillClick(studentId, tableIdx) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+
+            if (selectedStudentForSwap === null) {
+                // Select student
+                selectedStudentForSwap = { studentId, tableIdx };
+                
+                // Show action bar at bottom
+                const actionBar = document.getElementById('selection-action-bar');
+                const actionText = document.getElementById('action-bar-text');
+                actionText.innerHTML = `Seleccionat: <strong>${student.name}</strong>. Clica un altre per intercanviar o una taula buida per moure.`;
+                actionBar.classList.add('active');
+
+                // Highlight chosen pill
+                renderAssignments(); 
+            } else {
+                // If clicked the SAME student, deselect
+                if (selectedStudentForSwap.studentId === studentId) {
+                    clearSelection();
+                    return;
+                }
+
+                // If clicked a DIFFERENT student, SWAP them!
+                const sourceTableIdx = selectedStudentForSwap.tableIdx;
+                const targetTableIdx = tableIdx;
+
+                const sourceTable = assignments[sourceTableIdx];
+                const targetTable = assignments[targetTableIdx];
+
+                const s1Idx = sourceTable.findIndex(s => s.id === selectedStudentForSwap.studentId);
+                const s2Idx = targetTable.findIndex(s => s.id === studentId);
+
+                if (s1Idx !== -1 && s2Idx !== -1) {
+                    // Swap
+                    const temp = sourceTable[s1Idx];
+                    sourceTable[s1Idx] = targetTable[s2Idx];
+                    targetTable[s2Idx] = temp;
+
+                    showToast("Intercanvi realitzat");
+                    clearSelection();
+                    saveToLocalStorage();
+                    renderAssignments();
+                }
+            }
+        }
+
+        // INTERACTION: TABLE BODY CLICKED (TO MOVE STUDENT TO EMPTY TABLE SPACE)
+        function handleTableBodyClick(targetTableIdx) {
+            if (selectedStudentForSwap === null) return;
+
+            const sourceTableIdx = selectedStudentForSwap.tableIdx;
+            if (sourceTableIdx === targetTableIdx) {
+                clearSelection();
+                return;
+            }
+
+            const sourceTable = assignments[sourceTableIdx];
+            const targetTable = assignments[targetTableIdx];
+
+            // Check if target table is already at full capacity
+            // Wait: since user selects N and remainder generates a smaller table,
+            // we should warn if target table capacity is exceeded, or we can just move.
+            // Let's check max capacity constraint. In classrooms, table spots can be dynamic, 
+            // but we should respect the size of the table. If target table size is already N, 
+            // moving would exceed it. Let's show a prompt or just execute and alert.
+            const N = config.tableSize;
+            
+            // Find student to move
+            const sIdx = sourceTable.findIndex(s => s.id === selectedStudentForSwap.studentId);
+            if (sIdx !== -1) {
+                const studentToMove = sourceTable[sIdx];
+
+                // Move student
+                sourceTable.splice(sIdx, 1);
+                targetTable.push(studentToMove);
+
+                showToast(`Mogut/da a Taula ${targetTableIdx + 1}`);
+                clearSelection();
+                saveToLocalStorage();
+                renderAssignments();
+            }
+        }
+
+        function clearSelection() {
+            selectedStudentForSwap = null;
+            document.getElementById('selection-action-bar').classList.remove('active');
+            renderAssignments();
+        }
+
+        // --- EXPORTS & SAVE SESSION ---
+        function saveSessionToHistory() {
+            if (assignments.length === 0) {
+                showToast("No hi ha cap grup actiu per guardar.");
+                return;
+            }
+
+            const nameInput = document.getElementById('session-save-name');
+            let name = nameInput.value.trim();
+
+            if (!name) {
+                const date = new Date();
+                name = `Taules ${date.toLocaleDateString('ca-ES')} ${date.toLocaleTimeString('ca-ES', {hour: '2-digit', minute:'2-digit'})}`;
+            }
+
+            const newSession = {
+                id: 'sess_' + Math.random().toString(36).substr(2, 9),
+                name: name,
+                date: new Date().toISOString(),
+                assignments: JSON.parse(JSON.stringify(assignments)),
+                tablesCount: assignments.length
+            };
+
+            historySessions.push(newSession);
+            nameInput.value = '';
+            
+            saveToLocalStorage();
+            updateHistoryUI();
+            updateConfigUI();
+            showToast("Sessió guardada a l'historial!");
+            switchView('historial');
+        }
+
+        function copyWhatsAppText() {
+            if (assignments.length === 0) return;
+
+            let text = `*DISTRIBUCIÓ DE TAULES DE CLASSE*\n`;
+            text += `Generat el ${new Date().toLocaleDateString('ca-ES')}\n\n`;
+
+            assignments.forEach((table, index) => {
+                const names = table.map(s => {
+                    const genderEmoji = s.gender === 'H' ? '👦' : '👧';
+                    return `${s.name} ${genderEmoji}`;
+                }).join(', ');
+                text += `*Taula ${index + 1}* (${table.length} alumnes):\n👉 ${names}\n\n`;
+            });
+
+            // Copy to Clipboard (iOS Safari compatible)
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast("Text copiat al portapapers!");
+                }).catch(err => {
+                    showToast("Error en copiar. Si us plau, selecciona manualment.");
+                });
+            } else {
+                // Fallback for older browsers / webviews
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast("Text copiat al portapapers!");
+                } catch (e) {
+                    showToast("Error en copiar.");
+                }
+                document.body.removeChild(textarea);
+            }
+        }
+
+        // --- BACKUP & RESTORE DATA (JSON) ---
+        function exportBackupData() {
+            const data = {
+                students: students,
+                config: config,
+                history: historySessions,
+                assignments: assignments
+            };
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            const date = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `backup_taules_${date}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("Còpia de seguretat descarregada!");
+        }
+
+        function triggerImportBackup() {
+            document.getElementById('import-backup-file').click();
+        }
+
+        function importBackupData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.students) students = data.students;
+                    if (data.config) config = data.config;
+                    if (data.history) historySessions = data.history;
+                    if (data.assignments) assignments = data.assignments;
+                    
+                    saveToLocalStorage();
+                    
+                    // Actualitzar la interfície d'usuari
+                    updateStudentsUI();
+                    updateConfigUI();
+                    updateHistoryUI();
+                    if (assignments && assignments.length > 0) {
+                        renderAssignments();
+                        document.getElementById('tab-resultats').style.opacity = '1';
+                    } else {
+                        document.getElementById('tab-resultats').style.opacity = '0.5';
+                    }
+                    
+                    showToast("Dades restaurades correctament!");
+                } catch (err) {
+                    showToast("Error al processar el fitxer de còpia.");
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset input
+        }
+    </script>
+</body>
+</html>
