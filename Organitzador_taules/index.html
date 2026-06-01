@@ -65,20 +65,22 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
         }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
         body {
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            padding-top: calc(52px + var(--safe-area-top));
-            padding-bottom: calc(65px + var(--safe-area-bottom));
-            min-height: 100vh;
+            position: relative;
         }
 
         /* HEADER */
         header {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             right: 0;
@@ -101,7 +103,7 @@
 
         /* BOTTOM TAB BAR */
         .tab-bar {
-            position: fixed;
+            position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
@@ -141,7 +143,16 @@
 
         /* CONTAINER AND SECTIONS */
         .container {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             padding: 16px;
+            padding-top: calc(52px + var(--safe-area-top) + 16px);
+            padding-bottom: calc(56px + var(--safe-area-bottom) + 16px);
             max-width: 600px;
             margin: 0 auto;
         }
@@ -505,7 +516,7 @@
 
         /* ALERTS AND MESSAGES */
         .toast {
-            position: fixed;
+            position: absolute;
             bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
@@ -528,7 +539,7 @@
 
         /* SELECTION ACTION BAR */
         .action-bar {
-            position: fixed;
+            position: absolute;
             bottom: calc(56px + var(--safe-area-bottom));
             left: 0;
             right: 0;
@@ -697,6 +708,11 @@
 
         /* PRINT STYLING */
         @media print {
+            html, body {
+                height: auto !important;
+                overflow: visible !important;
+                position: static !important;
+            }
             body {
                 padding: 0;
                 background: white;
@@ -706,8 +722,11 @@
                 display: none !important;
             }
             .container {
+                position: static !important;
                 max-width: 100%;
                 padding: 0;
+                overflow: visible !important;
+                height: auto !important;
             }
             .tables-grid {
                 grid-template-columns: 1fr 1fr;
@@ -1038,8 +1057,9 @@
                 clearSelection();
             }
 
-            // Scroll to top
-            window.scrollTo(0, 0);
+            // Scroll content to top
+            const contentContainer = document.querySelector('.container');
+            if (contentContainer) contentContainer.scrollTop = 0;
         }
 
         function switchStudentTab(tab) {
