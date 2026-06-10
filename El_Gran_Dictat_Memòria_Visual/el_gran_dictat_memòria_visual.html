@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<!--
+  El Gran Dictat - Versió Millorada amb Funcionalitats Tecnopedagògiques i Dificultat Escalonada
+  Copyright (C) 2026 David Cordones
+
+  Aquest programa és programari lliure: podeu redistribuir-lo i/o modificar-lo
+  sota els termes de la Llicència Pública General Affero de GNU (AGPL v3)
+  publicada per la Free Software Foundation, ja sigui la versió 3 de la
+  Llicència, o (a la vostra elecció) qualsevol versió posterior.
+-->
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Gran Dictat - Mètode Gabarró</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel per compilar JSX al navegador -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background-color: #1e1b4b; 
+            background-image: radial-gradient(circle at top, #312e81 0%, #1e1b4b 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useMemo } = React;
+
+        // --- ICONES SVG ---
+        const IconBase = ({ children, size = 24, className = "", fill = "none" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+        const Play = (props) => <IconBase {...props} fill={props.fill || "none"}><polygon points="5 3 19 12 5 21 5 3"/></IconBase>;
+        const Check = (props) => <IconBase {...props}><polyline points="20 6 9 17 4 12"/></IconBase>;
+        const X = (props) => <IconBase {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconBase>;
+        const RefreshCcw = (props) => <IconBase {...props}><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></IconBase>;
+        const Eye = (props) => <IconBase {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></IconBase>;
+        const Trophy = (props) => <IconBase {...props}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></IconBase>;
+        const ArrowRight = (props) => <IconBase {...props}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></IconBase>;
+        const RotateCcw = (props) => <IconBase {...props}><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></IconBase>;
+        const Info = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></IconBase>;
+        const Volume2 = (props) => (
+            <IconBase {...props}>
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </IconBase>
+        );
+        const VolumeX = (props) => (
+            <IconBase {...props}>
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <line x1="23" y1="9" x2="17" y2="15"/>
+                <line x1="17" y1="9" x2="23" y2="15"/>
+            </IconBase>
+        );
+        const Upload = (props) => (
+            <IconBase {...props}>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+            </IconBase>
+        );
+        const Download = (props) => (
+            <IconBase {...props}>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </IconBase>
+        );
+        const Trash2 = (props) => (
+            <IconBase {...props}>
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+            </IconBase>
+        );
+        const Plus = (props) => (
+            <IconBase {...props}>
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </IconBase>
+        );
+        const Sliders = (props) => (
+            <IconBase {...props}>
+                <line x1="4" y1="21" x2="4" y2="14"/>
+                <line x1="4" y1="10" x2="4" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12" y2="3"/>
+                <line x1="20" y1="21" x2="20" y2="16"/>
+                <line x1="20" y1="12" x2="20" y2="3"/>
+                <line x1="2" y1="14" x2="6" y2="14"/>
+                <line x1="10" y1="8" x2="14" y2="8"/>
+                <line x1="18" y1="16" x2="22" y2="16"/>
+            </IconBase>
+        );
+
+        // --- BANC DE PARAULES PER DEFECTE (Mètode Gabarró) ---
+        const RAW_WORDS = [
+          "a vegades", "àvia", "avi", "cavall", "aprovar", "bonic", "bonica", "aquí", "bitllet",
+          "assignatura", "avui", "avió", "blanc", "avançar", "allí", "arribar", "botiga", "aventura",
+          "allà", "arbre", "bossa", "avorrir", "ahir", "anglès", "vídeo", "beguda", "així", "anava",
+          "visual", "balcó", "això", "boca", "viatge", "demà", "barca", "escriure", "butxaca",
+          "després", "ceba", "text", "conviure", "bé", "be", "col·legi", "vostre", "alt", "feliç",
+          "col·laborar", "volia", "dibuix", "guerra", "habitació", "cova", "treballar", "deures",
+          "treball", "covard", "vell", "vella", "bell", "bella", "excepte", "estalviar", "hi ha",
+          "dalt", "vegada", "a baix", "prohibir", "gimnàstica", "home", "avisar", "prova", "habitatge",
+          "jo", "excursió", "selva", "il·lusió", "meu", "meva", "govern", "vailet", "jove", "seu",
+          "seva", "matemàtiques", "veí", "veïna", "llenguatge", "nou", "nova", "llavors", "vent",
+          "meravellós", "meravellosa", "hivern", "obert", "dèbil", "mou", "movia", "hora", "vaixell",
+          "formatge", "núvol", "hospital", "autobús", "intel·ligència", "cotxe", "germà", "germana",
+          "equivocar", "paraigües", "rellotge", "història", "sempre", "entrepà", "temps", "verd",
+          "també", "alcohol", "vacances", "vull", "vosaltres", "aigua", "aigües", "vermell"
+        ];
+
+        const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
+
+        // --- ALGORITME DE CÀLCUL DE DIFICULTAT LINGÜÍSTICA (CATALÀ) ---
+        const getWordDifficulty = (word) => {
+          if (!word) return 0;
+          let score = word.length * 1.0; // base en longitud
+          
+          const countOccurrences = (str, pattern) => (str.match(pattern) || []).length;
+          
+          // Accents tònics (à, è, é, í, ò, ó, ú)
+          score += countOccurrences(word, /[àèéíòóú]/gi) * 1.5;
+          // Dièresis (ï, ü)
+          score += countOccurrences(word, /[ïü]/gi) * 3.0;
+          // Ce trencada (ç)
+          score += countOccurrences(word, /[ç]/gi) * 3.0;
+          // H muda (h)
+          score += countOccurrences(word, /[h]/gi) * 2.0;
+          // L geminada (l·l, l.l, l-l)
+          score += countOccurrences(word, /l[·\.\-]l/gi) * 4.0;
+          // Lletra X
+          score += countOccurrences(word, /[x]/gi) * 1.5;
+          
+          // Dígrafs i combinacions complexes en català
+          const digraphs = ['ny', 'ix', 'tg', 'tj', 'tx', 'ig', 'rr', 'ss', 'qu', 'gu'];
+          digraphs.forEach(dg => {
+            score += countOccurrences(word, new RegExp(dg, 'gi')) * 1.5;
+          });
+          
+          // Espais (expressions de dues o més paraules)
+          score += countOccurrences(word, /\s/g) * 3.0;
+          
+          return score;
+        };
+
+        // --- CLASSIFICACIÓ EN TRES GRUPS (FÀCIL, MITJÀ, DIFÍCIL) ---
+        const classifyWords = (wordObjects) => {
+          // Filtrar manualment assignades pels docents
+          const manual1 = wordObjects.filter(w => Number(w.difficulty) === 1);
+          const manual2 = wordObjects.filter(w => Number(w.difficulty) === 2);
+          const manual3 = wordObjects.filter(w => Number(w.difficulty) === 3);
+          
+          // Paraules automàtiques
+          const autoWords = wordObjects.filter(w => w.difficulty === null || ![1, 2, 3].includes(Number(w.difficulty)));
+          
+          // Calcular puntuació dels automàtics i ordenar
+          const scoredAuto = autoWords.map(w => ({
+            word: w.word,
+            score: getWordDifficulty(w.word)
+          })).sort((a, b) => a.score - b.score);
+          
+          const totalAuto = scoredAuto.length;
+          let easy = manual1.map(w => w.word);
+          let medium = manual2.map(w => w.word);
+          let hard = manual3.map(w => w.word);
+          
+          // Repartició equilibrada basant-se en percentils: fàcil (45%), mitjà (35%), difícil (20%)
+          scoredAuto.forEach((item, idx) => {
+            if (idx < totalAuto * 0.45) {
+              easy.push(item.word);
+            } else if (idx < totalAuto * 0.80) {
+              medium.push(item.word);
+            } else {
+              hard.push(item.word);
+            }
+          });
+          
+          // Salvaguarda en cas de llistes molt curtes (fallbacks)
+          const allWords = wordObjects.map(w => w.word);
+          if (easy.length === 0) easy = allWords;
+          if (medium.length === 0) medium = allWords;
+          if (hard.length === 0) hard = allWords;
+          
+          return { easy, medium, hard };
+        };
+
+        // --- COMPONENTS D'ANIMACIÓ ---
+        const Confetti = () => (
+          <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
+            {[...Array(80)].map((_, i) => (
+              <div key={i} className="absolute w-4 h-4 rounded-sm"
+                   style={{
+                     left: `${Math.random() * 100}%`,
+                     top: `-10%`,
+                     backgroundColor: ['#facc15', '#4ade80', '#60a5fa', '#f87171', '#c084fc'][Math.floor(Math.random() * 5)],
+                     animation: `fall ${Math.random() * 3 + 2}s linear infinite`,
+                     animationDelay: `${Math.random() * 2}s`
+                   }}
+              />
+            ))}
+            <style>{`@keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }`}</style>
+          </div>
+        );
+
+        const FloatingFeedback = ({ message, type, id }) => {
+          const color = type === 'success' ? 'text-green-400' : type === 'rebound' ? 'text-orange-400' : 'text-red-400';
+          return (
+            <div key={id} className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-7xl font-black ${color} z-50 pointer-events-none animate-floatUp drop-shadow-2xl`}>
+              {message}
+              <style>{`
+                @keyframes floatUp {
+                  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+                  50% { transform: translate(-50%, -100%) scale(1.2); }
+                  100% { opacity: 0; transform: translate(-50%, -150%) scale(1); }
+                }
+                .animate-floatUp { animation: floatUp 1.2s ease-out forwards; }
+              `}</style>
+            </div>
+          );
+        };
+
+        function App() {
+          // --- CONFIGURACIÓ DE PARAULES (LOCAL STORAGE HÍBRID) ---
+          const [wordSource, setWordSource] = useState(() => {
+            return localStorage.getItem('gabarro_word_source') || 'default';
+          });
+          const [customWords, setCustomWords] = useState(() => {
+            try {
+              const saved = localStorage.getItem('gabarro_custom_words');
+              if (!saved) return [];
+              const parsed = JSON.parse(saved);
+              // Migració d'estructures antigues a objectes amb dificultat
+              return parsed.map(item => {
+                if (typeof item === 'string') {
+                  return { word: item, difficulty: null };
+                }
+                return {
+                  word: item.word,
+                  difficulty: item.difficulty !== undefined ? (item.difficulty !== null ? Number(item.difficulty) : null) : null
+                };
+              });
+            } catch (e) {
+              return [];
+            }
+          });
+          
+          // Banc actiu format per objectes { word, difficulty }
+          const activeWordObjects = useMemo(() => {
+            if (wordSource === 'default') {
+              return RAW_WORDS.map(w => ({ word: w, difficulty: null }));
+            } else {
+              return customWords;
+            }
+          }, [wordSource, customWords]);
+
+          // --- CONFIGURACIÓ DE LA VEU I VELOCITAT ---
+          const [speechRate, setSpeechRate] = useState(() => {
+            const saved = localStorage.getItem('gabarro_speech_rate');
+            return saved ? Number(saved) : 0.85; // lleugerament pausat per defecte
+          });
+          const [selectedVoiceName, setSelectedVoiceName] = useState(() => {
+            return localStorage.getItem('gabarro_selected_voice') || '';
+          });
+          const [voices, setVoices] = useState([]);
+
+          // Guardar opcions de veu a localStorage
+          useEffect(() => {
+            localStorage.setItem('gabarro_speech_rate', speechRate);
+          }, [speechRate]);
+
+          useEffect(() => {
+            if (selectedVoiceName) {
+              localStorage.setItem('gabarro_selected_voice', selectedVoiceName);
+            }
+          }, [selectedVoiceName]);
+
+          // Càrrega i filtre de veus catalanes
+          const updateVoices = useCallback(() => {
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+              const allVoices = window.speechSynthesis.getVoices();
+              const caVoices = allVoices.filter(v => v.lang.toLowerCase().includes('ca') || v.lang.toLowerCase().includes('cat'));
+              setVoices(caVoices);
+              
+              if (caVoices.length > 0) {
+                const savedVoice = localStorage.getItem('gabarro_selected_voice');
+                const exists = caVoices.some(v => v.name === savedVoice);
+                if (exists && savedVoice) {
+                  setSelectedVoiceName(savedVoice);
+                } else {
+                  // Prioritzar la veu en línia Google català per sobre de les de l'OS
+                  const googleVoice = caVoices.find(v => v.name.toLowerCase().includes('google'));
+                  const defaultVoice = googleVoice || caVoices[0];
+                  setSelectedVoiceName(defaultVoice.name);
+                }
+              }
+            }
+          }, []);
+
+          // Escolta asíncrona robusta d'alta compatibilitat per a Chrome/Safari
+          useEffect(() => {
+            updateVoices();
+            
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+              window.speechSynthesis.addEventListener('voiceschanged', updateVoices);
+            }
+
+            // Fallback de seguretat 500ms després de muntar el component (molt útil per a Chrome en local)
+            const timer = setTimeout(() => {
+              updateVoices();
+            }, 500);
+
+            return () => {
+              clearTimeout(timer);
+              if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.removeEventListener('voiceschanged', updateVoices);
+              }
+            };
+          }, [updateVoices]);
+
+          // --- ESTAT DEL JOC ---
+          const [phase, setPhase] = useState(0); 
+          const [scoreA, setScoreA] = useState(0);
+          const [scoreB, setScoreB] = useState(0);
+          
+          // Llistes partides per dificultat activa
+          const [phase1Words, setPhase1Words] = useState([]);
+          const [phase2Words, setPhase2Words] = useState([]);
+          const [phase3Words, setPhase3Words] = useState([]);
+          
+          // Llista de joc de la fase actual (es barreja a l'inici d'aquesta)
+          const [words, setWords] = useState([]);
+          const [wordIndex, setWordIndex] = useState(0);
+          
+          const [failedWords, setFailedWords] = useState([]);
+          const [feedbacks, setFeedbacks] = useState([]);
+
+          // --- CONFIGURACIÓ D'AUDIO ---
+          const [isSoundEnabled, setIsSoundEnabled] = useState(() => {
+            const saved = localStorage.getItem('gabarro_sound_enabled');
+            return saved !== 'false';
+          });
+
+          // --- GESTIÓ INTERFÍCIE EDITORA ---
+          const [isWordManagerOpen, setIsWordManagerOpen] = useState(false);
+          const [newWordInput, setNewWordInput] = useState('');
+          const [searchQuery, setSearchQuery] = useState('');
+
+          // --- ESTAT FASE 1 ---
+          const [timeLeft, setTimeLeft] = useState(120);
+          const [isTimerRunning, setIsTimerRunning] = useState(false);
+          const [f1Turn, setF1Turn] = useState('A');
+
+          // --- ESTAT FASE 2 ---
+          const [f2Turn, setF2Turn] = useState('A');
+          const [playerA, setPlayerA] = useState(1);
+          const [playerB, setPlayerB] = useState(1);
+          const [isRebounded, setIsRebounded] = useState(false);
+
+          // --- ESTAT FASE 3 ---
+          const [f3WordsPlayed, setF3WordsPlayed] = useState(0);
+          const [wordRevealed, setWordRevealed] = useState(false);
+          const [f3WordScored, setF3WordScored] = useState({ A: false, B: false });
+
+          // Classificació prèvia activa per conèixer els badges de l'editor
+          const classifiedActive = useMemo(() => {
+            return classifyWords(activeWordObjects);
+          }, [activeWordObjects]);
+
+          // --- SINTETITZADOR DE SO (WEB AUDIO API) ---
+          const playSound = useCallback((type) => {
+            if (!isSoundEnabled) return;
+            try {
+              const AudioContext = window.AudioContext || window.webkitAudioContext;
+              if (!AudioContext) return;
+              const ctx = new AudioContext();
+              if (ctx.state === 'suspended') {
+                ctx.resume();
+              }
+              
+              if (type === 'correct') {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+                gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+              } else if (type === 'incorrect') {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+              } else if (type === 'rebound') {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.6);
+              } else if (type === 'timeup') {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(440, ctx.currentTime);
+                osc.frequency.setValueAtTime(330, ctx.currentTime + 0.15);
+                osc.frequency.setValueAtTime(440, ctx.currentTime + 0.3);
+                osc.frequency.setValueAtTime(330, ctx.currentTime + 0.45);
+                gain.gain.setValueAtTime(0.06, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.6);
+              } else if (type === 'victory') {
+                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                  const osc = ctx.createOscillator();
+                  const gain = ctx.createGain();
+                  osc.connect(gain);
+                  gain.connect(ctx.destination);
+                  osc.type = 'sine';
+                  osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
+                  gain.gain.setValueAtTime(0.08, ctx.currentTime + idx * 0.1);
+                  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + idx * 0.1 + 0.35);
+                  osc.start(ctx.currentTime + idx * 0.1);
+                  osc.stop(ctx.currentTime + idx * 0.1 + 0.35);
+                });
+              }
+            } catch (e) {
+              console.error("Audio Context Error:", e);
+            }
+          }, [isSoundEnabled]);
+
+          // --- SINTETITZADOR DE VEU AMB AJUST DE VELOCITAT I PITCH ---
+          const speakWord = (text) => {
+            if ('speechSynthesis' in window) {
+              window.speechSynthesis.cancel();
+              const utterance = new SpeechSynthesisUtterance(text);
+              utterance.lang = 'ca-ES';
+              utterance.rate = speechRate; // velocitat configurada
+              utterance.pitch = 1.02; // tonalitat clara i amigable
+              
+              if (selectedVoiceName) {
+                const voice = voices.find(v => v.name === selectedVoiceName);
+                if (voice) utterance.voice = voice;
+              } else {
+                const caVoice = voices.find(v => v.lang.toLowerCase().includes('ca'));
+                if (caVoice) utterance.voice = caVoice;
+              }
+              window.speechSynthesis.speak(utterance);
+            } else {
+              alert("El teu navegador no suporta la síntesi de veu.");
+            }
+          };
+
+          // --- GESTIÓ DEL BANC DE PARAULES & PARSER DE MULTI-COLUMNA CSV ---
+          const handleCSVUpload = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const text = event.target.result;
+              const lines = text.split(/\r?\n/);
+              if (lines.length === 0) return;
+
+              // Analitzar capçalera i separador (coma o punt i coma)
+              const firstLine = lines[0].trim();
+              const delimiter = firstLine.includes(';') ? ';' : ',';
+              const headers = firstLine.split(delimiter).map(h => h.trim().toLowerCase().replace(/^["']|["']$/g, ''));
+
+              // Comprovar si tenim columnes definides de dificultat (facil, mitja, dificil)
+              const isMultiColumn = headers.some(h => 
+                h.includes('facil') || h.includes('fàcil') || 
+                h.includes('mitja') || h.includes('mitjà') || 
+                h.includes('dificil') || h.includes('difícil')
+              );
+
+              const newWords = [];
+
+              if (isMultiColumn) {
+                // Mapejar cadascuna de les columnes al seu valor numeric de dificultat (1, 2, 3 o null)
+                const colMappings = headers.map(h => {
+                  if (h.includes('facil') || h.includes('fàcil') || h.includes('easy')) return 1;
+                  if (h.includes('mitja') || h.includes('mitjà') || h.includes('medium')) return 2;
+                  if (h.includes('dificil') || h.includes('difícil') || h.includes('hard')) return 3;
+                  return null; // auto
+                });
+
+                // Començar a llista a partir de la línia index 1 (fila de dades)
+                for (let i = 1; i < lines.length; i++) {
+                  const line = lines[i].trim();
+                  if (!line) continue;
+
+                  const cells = line.split(delimiter);
+                  cells.forEach((cell, colIdx) => {
+                    if (colIdx >= colMappings.length) return;
+                    
+                    let word = cell.trim().replace(/^["']|["']$/g, '').trim();
+                    if (word.length > 0) {
+                      newWords.push({
+                        word: word,
+                        difficulty: colMappings[colIdx]
+                      });
+                    }
+                  });
+                }
+              } else {
+                // Mode tradicional (2 columnes: paraula,dificultat o 1 sola columna de paraula auto)
+                lines.forEach((line, index) => {
+                  let trimmed = line.trim();
+                  if (!trimmed) return;
+
+                  const parts = trimmed.split(delimiter);
+                  let word = parts[0].trim().replace(/^["']|["']$/g, '').trim();
+                  let diffVal = null;
+
+                  if (parts.length > 1) {
+                    const rawDiff = parts[1].trim().replace(/^["']|["']$/g, '').trim();
+                    if (['1', '2', '3'].includes(rawDiff)) {
+                      diffVal = Number(rawDiff);
+                    }
+                  }
+
+                  // Ometre capçalera simple
+                  if (index === 0 && (word.toLowerCase() === 'paraula' || word.toLowerCase() === 'word' || word.toLowerCase() === 'paraules')) {
+                    return;
+                  }
+
+                  if (word.length > 0) {
+                    newWords.push({ word, difficulty: diffVal });
+                  }
+                });
+              }
+
+              if (newWords.length === 0) {
+                alert("No s'han trobat paraules vàlides. Revisa el format del fitxer CSV.");
+                return;
+              }
+
+              setCustomWords(newWords);
+              localStorage.setItem('gabarro_custom_words', JSON.stringify(newWords));
+              setWordSource('custom');
+              localStorage.setItem('gabarro_word_source', 'custom');
+              addFeedback(`Importades ${newWords.length} paraules!`, 'success');
+              playSound('correct');
+            };
+            reader.readAsText(file);
+          };
+
+          // Descarregar plantilla amb columnes per a cada dificultat
+          const downloadTemplateCSV = () => {
+            const csvContent = "facil,mitja,dificil,auto\navi,guerra,intel·ligència,blanc\nàvia,rebot,col·laborar,avió\nboca,deures,meravellós,veí\n";
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "plantilla_paraules_dictat.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          };
+
+          // Exportar en format multi-columna compatible i organitzat per columnes de dificultat
+          const exportWordsCSV = () => {
+            const easy = activeWordObjects.filter(w => w.difficulty === 1).map(w => w.word);
+            const medium = activeWordObjects.filter(w => w.difficulty === 2).map(w => w.word);
+            const hard = activeWordObjects.filter(w => w.difficulty === 3).map(w => w.word);
+            const auto = activeWordObjects.filter(w => w.difficulty === null || ![1, 2, 3].includes(w.difficulty)).map(w => w.word);
+
+            const maxLen = Math.max(easy.length, medium.length, hard.length, auto.length);
+            let csvLines = ["facil,mitja,dificil,auto"];
+
+            for (let i = 0; i < maxLen; i++) {
+              const eVal = easy[i] || "";
+              const mVal = medium[i] || "";
+              const hVal = hard[i] || "";
+              const aVal = auto[i] || "";
+              csvLines.push(`${eVal},${mVal},${hVal},${aVal}`);
+            }
+
+            const blob = new Blob([csvLines.join("\n")], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `banc_paraules_${wordSource}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          };
+
+          const exportErrorsCSV = () => {
+            if (failedWords.length === 0) return;
+            const header = "paraules_fallades\n";
+            const content = failedWords.join("\n");
+            const blob = new Blob([header + content], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "paraules_fallades_dictat.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          };
+
+          const handleManualAddWord = (e) => {
+            e.preventDefault();
+            const trimmed = newWordInput.trim();
+            if (!trimmed) return;
+
+            if (customWords.map(w => w.word.toLowerCase()).includes(trimmed.toLowerCase())) {
+              alert("Aquesta paraula ja és a la llista.");
+              return;
+            }
+
+            const diffInput = document.getElementById('manualDifficultySelect').value;
+            const diffVal = diffInput ? Number(diffInput) : null;
+
+            const updated = [...customWords, { word: trimmed, difficulty: diffVal }];
+            setCustomWords(updated);
+            localStorage.setItem('gabarro_custom_words', JSON.stringify(updated));
+            setNewWordInput('');
+            addFeedback("Afegida!", "success");
+            playSound('correct');
+          };
+
+          const handleDeleteWord = (itemToDelete) => {
+            const updated = customWords.filter(w => w.word !== itemToDelete.word);
+            setCustomWords(updated);
+            localStorage.setItem('gabarro_custom_words', JSON.stringify(updated));
+            addFeedback("Eliminada", "error");
+            playSound('incorrect');
+          };
+
+          const handleClearAllCustomWords = () => {
+            if (confirm("Segur que vols esborrar TOTES les paraules personalitzades? Aquesta acció no es pot desfer.")) {
+              setCustomWords([]);
+              localStorage.setItem('gabarro_custom_words', JSON.stringify([]));
+              addFeedback("Llista buidada", "error");
+              playSound('incorrect');
+            }
+          };
+
+          // --- FUNCIONS DEL JOC I TRANSICIONS ENTRE FASES ---
+          const startGame = () => {
+            if (activeWordObjects.length === 0) {
+              alert("El banc de paraules està buit! Si us plau, afegeix paraules o utilitza la llista per defecte.");
+              return;
+            }
+            
+            // Classificar prèviament les paraules en 3 dificultats
+            const { easy, medium, hard } = classifyWords(activeWordObjects);
+            setPhase1Words(easy);
+            setPhase2Words(medium);
+            setPhase3Words(hard);
+
+            // Carregar fàcils (Easy) per a la Fase 1
+            const shuffledEasy = shuffleArray(easy);
+            setWords(shuffledEasy);
+            setWordIndex(0);
+            
+            setFailedWords([]);
+            setScoreA(0);
+            setScoreB(0);
+            
+            // Iniciar Fase 1
+            setPhase(1);
+            setTimeLeft(120);
+            setIsTimerRunning(false);
+            setF1Turn('A');
+            
+            setF2Turn('A');
+            setPlayerA(1);
+            setPlayerB(1);
+            setIsRebounded(false);
+            
+            setF3WordsPlayed(0);
+            setWordRevealed(false);
+            setF3WordScored({ A: false, B: false });
+ 
+             playSound('correct');
+          };
+
+          const transitionToPhase2 = () => {
+            // Carregar mitjanes (Medium) per a la Fase 2
+            const shuffledMedium = shuffleArray(phase2Words);
+            setWords(shuffledMedium);
+            setWordIndex(0);
+            setF2Turn('A');
+            setIsRebounded(false);
+            setPhase(2);
+            playSound('correct');
+          };
+
+          const transitionToPhase3 = () => {
+            // Carregar difícils (Hard) per a la Fase 3
+            const shuffledHard = shuffleArray(phase3Words);
+            setWords(shuffledHard);
+            setWordIndex(0);
+            setF3WordsPlayed(0);
+            setWordRevealed(false);
+            setPhase(3);
+            playSound('correct');
+          };
+
+          const goToPhase = (targetPhase) => {
+            setIsTimerRunning(false);
+            
+            let easyList = phase1Words;
+            let mediumList = phase2Words;
+            let hardList = phase3Words;
+            
+            if (easyList.length === 0 && mediumList.length === 0 && hardList.length === 0 && activeWordObjects.length > 0) {
+              const { easy, medium, hard } = classifyWords(activeWordObjects);
+              easyList = easy;
+              mediumList = medium;
+              hardList = hard;
+              setPhase1Words(easy);
+              setPhase2Words(medium);
+              setPhase3Words(hard);
+            }
+            
+            if (targetPhase === 0) {
+              setPhase(0);
+              setScoreA(0);
+              setScoreB(0);
+              setFailedWords([]);
+              setF3WordScored({ A: false, B: false });
+            } else if (targetPhase === 1) {
+              const shuffledEasy = shuffleArray(easyList.length > 0 ? easyList : ["prova1", "prova2"]);
+              setWords(shuffledEasy);
+              setWordIndex(0);
+              setTimeLeft(120);
+              setF1Turn('A');
+              setPhase(1);
+            } else if (targetPhase === 2) {
+              const shuffledMedium = shuffleArray(mediumList.length > 0 ? mediumList : ["prova3", "prova4"]);
+              setWords(shuffledMedium);
+              setWordIndex(0);
+              setF2Turn('A');
+              setIsRebounded(false);
+              setPhase(2);
+            } else if (targetPhase === 3) {
+              const shuffledHard = shuffleArray(hardList.length > 0 ? hardList : ["prova5", "prova6"]);
+              setWords(shuffledHard);
+              setWordIndex(0);
+              setF3WordsPlayed(0);
+              setWordRevealed(false);
+              setF3WordScored({ A: false, B: false });
+              setPhase(3);
+            } else if (targetPhase === 4) {
+              setPhase(4);
+            } else if (targetPhase === 5) {
+              setPhase(5);
+            } else if (targetPhase === 6) {
+              setPhase(6);
+            }
+            
+            playSound('correct');
+          };
+
+          const addFeedback = (msg, type) => {
+            const newFeedback = { id: Date.now(), msg, type };
+            setFeedbacks(prev => [...prev, newFeedback]);
+            setTimeout(() => setFeedbacks(prev => prev.filter(f => f.id !== newFeedback.id)), 1200);
+          };
+
+          const getNextWord = useCallback((failed = false) => {
+            if (failed) {
+              setFailedWords(prev => {
+                if (!prev.includes(words[wordIndex])) return [...prev, words[wordIndex]];
+                return prev;
+              });
+            }
+            setWordIndex(prev => (prev + 1) % words.length);
+          }, [words, wordIndex]);
+
+          // Timer de la Fase 1
+          useEffect(() => {
+            let timer;
+            if (isTimerRunning && timeLeft > 0) {
+              timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+            } else if (timeLeft === 0 && isTimerRunning) {
+              setIsTimerRunning(false);
+              addFeedback("TEMPS!", "error");
+              playSound('timeup');
+            }
+            return () => clearInterval(timer);
+          }, [isTimerRunning, timeLeft, playSound]);
+
+          // So de victòria a la pantalla final
+          useEffect(() => {
+            if (phase === 4) {
+              playSound('victory');
+            }
+          }, [phase, playSound]);
+
+          const handleF1Correct = () => {
+            if (f1Turn === 'A') setScoreA(s => s + 10);
+            else setScoreB(s => s + 10);
+            addFeedback("+10", "success");
+            playSound('correct');
+            getNextWord(false);
+          };
+
+          const handleF1Incorrect = () => {
+            addFeedback("ERRADA", "error");
+            playSound('incorrect');
+            getNextWord(true);
+          };
+
+          const switchF1Turn = () => {
+            setF1Turn('B');
+            setTimeLeft(120);
+            setIsTimerRunning(false);
+            playSound('correct');
+          };
+
+          const handleF2Correct = () => {
+            if (f2Turn === 'A') setScoreA(s => s + 20);
+            else setScoreB(s => s + 20);
+            addFeedback("+20", "success");
+            playSound('correct');
+            
+            if (f2Turn === 'A' || isRebounded) setPlayerA(p => p < 12 ? p + 1 : 1);
+            if (f2Turn === 'B' || isRebounded) setPlayerB(p => p < 12 ? p + 1 : 1);
+            
+            setF2Turn(prev => prev === 'A' ? 'B' : 'A');
+            setIsRebounded(false);
+            getNextWord(false);
+          };
+
+          const handleF2Rebound = () => {
+            addFeedback("REBOT!", "rebound");
+            playSound('rebound');
+            setF2Turn(prev => prev === 'A' ? 'B' : 'A');
+            setIsRebounded(true);
+            setFailedWords(prev => prev.includes(words[wordIndex]) ? prev : [...prev, words[wordIndex]]);
+          };
+
+          const handleF2Cancel = () => {
+            addFeedback("ANUL·LADA", "error");
+            playSound('incorrect');
+            if (f2Turn === 'A') setPlayerA(p => p < 12 ? p + 1 : 1);
+            else setPlayerB(p => p < 12 ? p + 1 : 1);
+            
+            setF2Turn(prev => prev === 'A' ? 'B' : 'A');
+            setIsRebounded(false);
+            getNextWord(true);
+          };
+
+          const handleF3ToggleA = () => {
+            setF3WordScored(prev => {
+              const nextState = !prev.A;
+              if (nextState) {
+                setScoreA(s => s + 30);
+                addFeedback("+30 EQUIP A", "success");
+                playSound('correct');
+              } else {
+                setScoreA(s => Math.max(0, s - 30));
+                addFeedback("-30 EQUIP A", "error");
+                playSound('incorrect');
+              }
+              return { ...prev, A: nextState };
+            });
+          };
+
+          const handleF3ToggleB = () => {
+            setF3WordScored(prev => {
+              const nextState = !prev.B;
+              if (nextState) {
+                setScoreB(s => s + 30);
+                addFeedback("+30 EQUIP B", "success");
+                playSound('correct');
+              } else {
+                setScoreB(s => Math.max(0, s - 30));
+                addFeedback("-30 EQUIP B", "error");
+                playSound('incorrect');
+              }
+              return { ...prev, B: nextState };
+            });
+          };
+
+          const handleF3Next = () => {
+            if (f3WordsPlayed >= 5) {
+              setPhase(4);
+            } else {
+              setF3WordsPlayed(p => p + 1);
+              setWordRevealed(false);
+              setF3WordScored({ A: false, B: false });
+              getNextWord(false);
+            }
+          };
+
+          const formatTime = (seconds) => {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m}:${s.toString().padStart(2, '0')}`;
+          };
+
+          const currentWord = words[wordIndex] || "Carregant...";
+
+          // Filtratge de paraules per a l'editor visual
+          const filteredWordsList = useMemo(() => {
+            return activeWordObjects.filter(item => 
+              item.word.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+          }, [activeWordObjects, searchQuery]);
+
+          return (
+            <div className={`min-h-screen text-white font-sans transition-colors duration-500 relative flex flex-col ${phase === 3 && !wordRevealed ? 'bg-slate-955' : 'bg-transparent'}`}>
+              
+              {/* CAPÇALERA DEL JOC */}
+              {phase > 0 && phase < 5 && (
+                <header className="fixed top-0 w-full flex items-center justify-between px-8 py-4 bg-black/40 backdrop-blur-md z-40 border-b border-white/10">
+                  <div className="flex flex-col items-center">
+                    <span className="text-xl font-bold text-blue-300 tracking-wider">EQUIP A</span>
+                    <span className="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]">{scoreA}</span>
+                  </div>
+                  <div className="text-center flex-1">
+                    <h1 className="text-3xl font-black tracking-widest text-yellow-400 uppercase drop-shadow-md">
+                      {phase === 1 ? 'La Pluja de Lletres' : phase === 2 ? 'El Rebot' : phase === 3 ? 'La Gran Final' : 'Resultats'}
+                    </h1>
+                    <p className="text-indigo-200 text-sm font-medium tracking-widest mt-1 opacity-80">EL GRAN DICTAT</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xl font-bold text-red-400 tracking-wider">EQUIP B</span>
+                      <span className="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(248,113,113,0.8)]">{scoreB}</span>
+                    </div>
+                    <button 
+                      onClick={() => setIsSoundEnabled(prev => !prev)}
+                      className="p-3 bg-white/5 hover:bg-white/15 rounded-full text-slate-300 hover:text-white transition-all"
+                      title={isSoundEnabled ? "Silenciar efectes de so" : "Activar efectes de so"}
+                    >
+                      {isSoundEnabled ? <Volume2 size={24} /> : <VolumeX size={24} className="text-red-400" />}
+                    </button>
+                  </div>
+                </header>
+              )}
+
+              {feedbacks.map(f => <FloatingFeedback key={f.id} message={f.msg} type={f.type} />)}
+
+              <main className="pt-32 pb-32 flex-grow flex flex-col items-center justify-center px-4 w-full">
+                
+                {/* PANTALLA INICIAL (PHASE 0) */}
+                {phase === 0 && (
+                  <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center px-4 py-8">
+                    
+                    {/* COLUMNA ESQUERRA: TITOL I ACCIONS */}
+                    <div className="lg:col-span-7 text-center lg:text-left flex flex-col justify-center animate-fade-in-up">
+                      <div className="mb-8 relative inline-block self-center lg:self-start">
+                        <h1 className="text-7xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-yellow-300 via-yellow-500 to-orange-600 drop-shadow-2xl">
+                          EL GRAN<br/>DICTAT
+                        </h1>
+                        <div className="absolute -top-6 right-0 lg:-right-10 text-6xl rotate-12">📝</div>
+                      </div>
+                      <p className="text-xl md:text-2xl text-indigo-200 mb-10 max-w-2xl leading-relaxed">
+                        Benvinguts al gran concurs de lletreig i vocabulari de la classe. Les paraules augmenten de dificultat a cada fase!
+                      </p>
+                      
+                      <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+                          <button 
+                            onClick={() => setPhase(6)}
+                            className="px-8 py-4 bg-white/10 hover:bg-white/20 border-2 border-white/30 rounded-full font-bold text-lg uppercase tracking-widest transition-all hover:scale-105 backdrop-blur-md flex items-center gap-3"
+                          >
+                            <Info size={24} /> Instruccions
+                          </button>
+                          <button 
+                            onClick={startGame}
+                            className="group relative px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full font-bold text-lg uppercase tracking-widest overflow-hidden shadow-[0_0_40px_rgba(79,70,229,0.5)] hover:shadow-[0_0_60px_rgba(79,70,229,0.8)] transition-all hover:scale-105"
+                          >
+                            <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                            <span className="flex items-center gap-3 relative z-10">Començar el Joc <Play fill="currentColor" /></span>
+                          </button>
+                      </div>
+                    </div>
+
+                    {/* COLUMNA DRETA: CONFIGURACIÓ (DASHBOARD DOBLE) */}
+                    <div className="lg:col-span-5 flex flex-col gap-6 justify-center w-full max-w-md mx-auto animate-fade-in-up">
+                      
+                      {/* CARD 1: CONFIGURACIÓ DE PARAULES */}
+                      <div className="bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-3xl p-6 shadow-2xl text-left w-full">
+                        <h3 className="text-xl sm:text-2xl font-black text-yellow-400 mb-5 flex items-center gap-2">
+                          <Sliders className="text-yellow-400" size={24} />
+                          Banc de Paraules
+                        </h3>
+                        
+                        {/* Canviador d'origen */}
+                        <div className="flex bg-slate-900/60 p-1 rounded-xl mb-4 border border-slate-700/50">
+                          <button 
+                            onClick={() => { setWordSource('default'); localStorage.setItem('gabarro_word_source', 'default'); }}
+                            className={`flex-1 py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all uppercase tracking-wider ${wordSource === 'default' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                          >
+                            Gabarró (Defecte)
+                          </button>
+                          <button 
+                            onClick={() => { setWordSource('custom'); localStorage.setItem('gabarro_word_source', 'custom'); }}
+                            className={`flex-1 py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all uppercase tracking-wider ${wordSource === 'custom' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                          >
+                            Personalitzat
+                          </button>
+                        </div>
+                        
+                        {/* Comptador de paraules */}
+                        <div className="mb-4 flex justify-between items-center text-xs sm:text-sm bg-slate-900/40 p-3 rounded-xl border border-slate-700/50">
+                          <span className="text-slate-400 font-semibold">Paraules actives:</span>
+                          <span className="text-lg font-black text-white bg-indigo-500/20 px-2.5 py-0.5 rounded-lg border border-indigo-500/30">
+                            {activeWordObjects.length}
+                          </span>
+                        </div>
+                        
+                        {/* Accions segons l'origen */}
+                        <div className="space-y-3">
+                          {wordSource === 'custom' && (
+                            <div className="grid grid-cols-2 gap-2">
+                              <label className="flex items-center justify-center gap-1.5 py-2 px-3 bg-blue-600/20 hover:bg-blue-600/35 border border-blue-500/30 text-blue-200 rounded-xl font-bold text-xs sm:text-sm cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]" title="Puja un CSV organitzat per columnes de dificultat">
+                                <Upload size={16} /> Importar CSV
+                                <input type="file" accept=".csv" onChange={handleCSVUpload} className="hidden" />
+                              </label>
+                              <button 
+                                onClick={exportWordsCSV}
+                                disabled={activeWordObjects.length === 0}
+                                className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-600/20 hover:bg-emerald-600/35 border border-emerald-500/30 text-emerald-200 rounded-xl font-bold text-xs sm:text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                              >
+                                <Download size={16} /> Exportar CSV
+                              </button>
+                            </div>
+                          )}
+                          
+                          <div className="flex gap-2">
+                            {wordSource === 'default' && (
+                              <button 
+                                onClick={exportWordsCSV}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-600/20 hover:bg-emerald-600/35 border border-emerald-500/30 text-emerald-200 rounded-xl font-bold text-xs sm:text-sm transition-all hover:scale-[1.02]"
+                              >
+                                <Download size={16} /> Exportar llista
+                              </button>
+                            )}
+                            <button 
+                              onClick={downloadTemplateCSV}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-700/60 hover:bg-slate-700/90 border border-slate-650 text-slate-350 rounded-xl font-bold text-xs sm:text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                              title="Plantilla de columnes: facil, mitja, dificil, auto"
+                            >
+                              <Download size={16} /> Plantilla CSV
+                            </button>
+                          </div>
+                          
+                          {/* Botó obrir editor visual */}
+                          <div className="pt-1">
+                            <button 
+                              onClick={() => { setIsWordManagerOpen(true); playSound('correct'); }}
+                              className="w-full py-3 bg-slate-900 hover:bg-slate-955 border border-slate-700 rounded-xl font-bold text-xs sm:text-sm text-slate-350 hover:text-white transition-all flex items-center justify-center gap-2 shadow-md"
+                            >
+                              👁️ Veure i editar les paraules
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* CARD 2: CONFIGURACIÓ DE LA VEU DEL DICTAT AMB INSTRUCCIONS DE RESOLUCIÓ D'ERRORS */}
+                      <div className="bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-3xl p-6 shadow-2xl text-left w-full">
+                        <h3 className="text-xl sm:text-2xl font-black text-yellow-400 mb-5 flex items-center gap-2">
+                          <Volume2 className="text-yellow-400" size={24} />
+                          Configuració del Dictat
+                        </h3>
+                        
+                        {/* Selector de Veu o Missatge d'error amb explicació detallada d'instal·lació */}
+                        <div className="mb-4">
+                          <label className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block mb-1.5">Veu de síntesi:</label>
+                          {voices.length === 0 ? (
+                            <div className="text-[11px] text-yellow-350 bg-yellow-500/10 border border-yellow-500/25 p-3 rounded-xl space-y-1.5">
+                              <p className="font-bold">⚠️ No s'ha detectat cap veu en català instal·lada al sistema.</p>
+                              <p>El dispositiu no té el paquet de síntesi en català actiu. Per solucionar-ho:</p>
+                              <ul className="list-disc pl-4 space-y-1.5 mt-1 text-slate-300 font-medium">
+                                <li><strong>A Windows:</strong> Ves a <em>Configuració &gt; Hora i idioma &gt; Idioma i regió &gt; Afegeix un idioma</em>. Cerca <strong>Català</strong> i recorda marcar la casella de <strong>"Veu" (Text-to-speech)</strong> al instal·lar-lo.</li>
+                                <li><strong>A Google Chrome:</strong> Assegura't d'estar connectat a internet per a carregar la veu en línia <em>Google català</em> (pots recarregar la pàgina un cop tinguis xarxa).</li>
+                              </ul>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <select 
+                                value={selectedVoiceName}
+                                onChange={(e) => setSelectedVoiceName(e.target.value)}
+                                className="flex-grow px-2 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-medium focus:outline-none focus:border-indigo-500 transition-colors text-xs sm:text-sm"
+                              >
+                                {voices.map((v, idx) => (
+                                  <option key={idx} value={v.name}>
+                                    {v.name} ({v.localService ? 'Offline' : 'Online'})
+                                  </option>
+                                ))}
+                              </select>
+                              <button 
+                                onClick={() => speakWord("prova de dictat")}
+                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 shadow-md flex items-center justify-center gap-1"
+                                title="Escoltar prova"
+                              >
+                                Prova
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Control de Velocitat del Dictat */}
+                        <div>
+                          <label className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block mb-1.5 flex justify-between">
+                            <span>Velocitat de lectura:</span>
+                            <span className="text-indigo-350 font-black">
+                              {speechRate === 1 ? 'Normal' : speechRate < 0.8 ? 'Molt lenta' : speechRate < 1 ? 'Pausada' : 'Ràpida'} ({speechRate}x)
+                            </span>
+                          </label>
+                          <input 
+                            type="range" 
+                            min="0.6" 
+                            max="1.3" 
+                            step="0.05"
+                            value={speechRate}
+                            onChange={(e) => setSpeechRate(Number(e.target.value))}
+                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-550 focus:outline-none"
+                          />
+                          <div className="flex justify-between text-[9px] text-slate-500 mt-1 font-semibold">
+                            <span>Lenta (0.6x)</span>
+                            <span>Normal (1.0x)</span>
+                            <span>Ràpida (1.3x)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                )}
+
+                {/* MODAL DE GESTIÓ DE PARAULES (VISUAL EDITOR) - CORRETGIDA PER A ZOOM I OVERFLOW */}
+                {isWordManagerOpen && (
+                  <div className="fixed inset-0 bg-slate-955/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-800 border border-slate-700 w-full max-w-2xl rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-fade-in-up">
+                      
+                      {/* Capçalera del diàleg */}
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+                          📝 Edició del Banc de Paraules
+                        </h3>
+                        <button 
+                          onClick={() => setIsWordManagerOpen(false)}
+                          className="p-1.5 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition"
+                          title="Tancar"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
+
+                      {/* Descripció del diàleg */}
+                      <p className="text-slate-400 text-xs sm:text-sm mb-4">
+                        {wordSource === 'default' 
+                          ? "Llista de lectura del Mètode Gabarró. Les dificultats es calculen automàticament (Auto)."
+                          : "Afegeix paraules triant la dificultat o deixa-la en 'Auto' perquè l'algoritme lingüístic decideixi."
+                        }
+                      </p>
+
+                      {/* Formulari d'afegir manualment amb dificultat */}
+                      {wordSource === 'custom' && (
+                        <form onSubmit={handleManualAddWord} className="flex flex-col sm:flex-row gap-2 mb-4">
+                          <input 
+                            type="text" 
+                            placeholder="Afegeix una paraula nova..." 
+                            value={newWordInput}
+                            onChange={(e) => setNewWordInput(e.target.value)}
+                            className="flex-grow px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-medium focus:outline-none focus:border-indigo-500 transition-colors text-sm"
+                          />
+                          <div className="flex gap-2">
+                            <select 
+                              id="manualDifficultySelect"
+                              className="px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-350 font-medium focus:outline-none focus:border-indigo-500 transition-colors text-xs sm:text-sm"
+                            >
+                              <option value="">Auto (Càlcul automàtic)</option>
+                              <option value="1">1 - Fàcil (Fase 1)</option>
+                              <option value="2">2 - Mitjà (Fase 2)</option>
+                              <option value="3">3 - Difícil (Fase 3)</option>
+                            </select>
+                            <button 
+                              type="submit"
+                              className="px-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold flex items-center gap-2 text-white transition-all shadow-md active:scale-95 text-xs sm:text-sm whitespace-nowrap"
+                            >
+                              <Plus size={18} /> Afegir
+                            </button>
+                          </div>
+                        </form>
+                      )}
+
+                      {/* Cercador */}
+                      <div className="mb-3">
+                        <input 
+                          type="text" 
+                          placeholder="Cerca paraules a la llista..." 
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full px-4 py-2.5 bg-slate-900/60 border border-slate-700/50 rounded-xl text-slate-300 font-medium focus:outline-none focus:border-indigo-500 transition-colors text-xs sm:text-sm"
+                        />
+                      </div>
+
+                      {/* Llista de paraules amb alçada dinàmica scrollable */}
+                      <div className="flex-grow overflow-y-auto bg-slate-900/40 border border-slate-700/40 rounded-2xl p-3 sm:p-4 min-h-[120px] mb-4">
+                        {filteredWordsList.length === 0 ? (
+                          <div className="text-center text-slate-500 py-8 text-sm sm:text-base">
+                            Cap paraula trobada.
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {filteredWordsList.map((item, idx) => {
+                              // Determinar la classificació final de la paraula
+                              const getWordTierInfo = () => {
+                                if (item.difficulty === 1 || item.difficulty === 2 || item.difficulty === 3) {
+                                  return { tier: item.difficulty, isManual: true };
+                                }
+                                const word = item.word;
+                                if (classifiedActive.easy.includes(word)) return { tier: 1, isManual: false };
+                                if (classifiedActive.medium.includes(word)) return { tier: 2, isManual: false };
+                                return { tier: 3, isManual: false };
+                              };
+                              const tierInfo = getWordTierInfo();
+                              const badgeColor = tierInfo.tier === 1 ? 'bg-green-500/10 text-green-400 border-green-500/20' 
+                                               : tierInfo.tier === 2 ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' 
+                                               : 'bg-red-500/10 text-red-400 border-red-500/20';
+                              const badgeText = tierInfo.tier === 1 ? 'Fàcil (Fase 1)' : tierInfo.tier === 2 ? 'Mitjà (Fase 2)' : 'Difícil (Fase 3)';
+                              const typeText = tierInfo.isManual ? 'Manual' : 'Auto';
+
+                              return (
+                                <div 
+                                  key={idx} 
+                                  className="flex justify-between items-center bg-slate-800/50 hover:bg-slate-750 border border-slate-700/30 px-3 py-2 rounded-xl transition-all"
+                                >
+                                  <div className="flex flex-col truncate pr-2">
+                                    <span className="font-semibold text-slate-200 text-sm sm:text-base truncate" title={item.word}>{item.word}</span>
+                                    <span className={`text-[9px] px-1 py-0.2 rounded border ${badgeColor} inline-block self-start mt-1 font-bold tracking-wider`}>
+                                      {badgeText} · {typeText}
+                                    </span>
+                                  </div>
+                                  {wordSource === 'custom' && (
+                                    <button 
+                                      onClick={() => handleDeleteWord(item)}
+                                      className="p-1 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg transition"
+                                      title="Eliminar paraula"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Botons de tancament a la base en flex fixat */}
+                      <div className="flex justify-between items-center mt-auto pt-2 border-t border-slate-700/50">
+                        {wordSource === 'custom' && (
+                          <button 
+                            onClick={handleClearAllCustomWords}
+                            disabled={customWords.length === 0}
+                            className="flex items-center gap-1.5 py-2 px-3 bg-red-600/15 hover:bg-red-600/25 border border-red-500/20 text-red-400 rounded-xl font-bold text-xs sm:text-sm transition-all disabled:opacity-40 disabled:pointer-events-none"
+                          >
+                            <Trash2 size={14} /> Buidar llista
+                          </button>
+                        )}
+                        <div className="flex-grow"></div>
+                        <button 
+                          onClick={() => setIsWordManagerOpen(false)}
+                          className="py-2 px-5 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-xs sm:text-sm text-white transition-all shadow-md active:scale-95"
+                        >
+                          Tancar
+                        </button>
+                      </div>
+
+                    </div>
+                  </div>
+                )}
+
+                {/* INSTRUCCIONS (PHASE 6) */}
+                {phase === 6 && (
+                  <div className="w-full max-w-5xl mx-auto bg-slate-800/90 rounded-3xl p-10 shadow-2xl border border-slate-650 animate-fade-in-up text-left overflow-y-auto max-h-[85vh]">
+                    <h2 className="text-4xl font-black text-yellow-400 mb-6 flex items-center gap-4">
+                      <Info size={40}/>
+                      Organització i Funcionament
+                    </h2>
+                    
+                    <div className="space-y-8 text-lg text-slate-350">
+                      <section>
+                        <h3 className="text-2xl font-bold text-white mb-2">👥 Organització</h3>
+                        <p>La classe es divideix en <strong>dos equips (Equip A i Equip B)</strong>. El docent actua com a presentador o àrbitre: valida les respostes, utilitza el sintetitzador de veu per a dictar la paraula i controla l'avanç del joc.</p>
+                      </section>
+
+                      <section>
+                        <h3 className="text-2xl font-bold text-blue-400 mb-2">Fase 1: La Pluja de Lletres (Velocitat)</h3>
+                        <p>Cada equip té <strong>2 minuts</strong> per encertar tantes paraules com pugui. Un alumne de l'equip en joc ha de lletrejar la paraula oralment (d'esquena a la pissarra). En aquesta fase s'usen les paraules de nivell **FÀCIL**. Cada encert suma <strong>10 punts</strong>.</p>
+                      </section>
+
+                      <section>
+                        <h3 className="text-2xl font-bold text-orange-400 mb-2">Fase 2: El Rebot (Atenció i Velocitat)</h3>
+                        <p>Format de cara a cara. El docent o el sintetitzador diu una paraula de nivell **MITJÀ** a un jugador. Si s'equivoca, el docent prem "Rebot" i el torn passa immediatament a l'altre equip. L'encert directe suma <strong>20 punts</strong>.</p>
+                      </section>
+
+                      <section>
+                        <h3 className="text-2xl font-bold text-purple-400 mb-2">Fase 3: La Gran Final (La Pissarra)</h3>
+                        <p>Fase d'escriptura física amb les paraules de nivell **DIFÍCIL**. 3 representants de cada equip han d'escriure la paraula a una pissarra física. Podeu fer clic al botó de dictar per escoltar la paraula abans de revelar-la. Els equips que l'hagin escrit correctament sumen <strong>30 punts</strong>.</p>
+                      </section>
+                      
+                      <section>
+                        <h3 className="text-2xl font-bold text-green-400 mb-2">Repàs d'errors (Mètode Gabarró)</h3>
+                        <p>En finalitzar, l'aplicació desa els errors ortogràfics per a un repàs final, de manera que la memòria visual dels alumnes fixi la forma correcta dels termes.</p>
+                      </section>
+
+                      <section className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700">
+                        <h3 className="text-2xl font-bold text-slate-100 mb-3 border-b border-slate-650 pb-2">📜 Autoria i Llicències</h3>
+                        <p className="mb-2"><strong>El Gran Dictat</strong> - Joc educatiu creat per <strong>David Cordones</strong> (2026).</p>
+                        <ul className="list-disc pl-5 space-y-2 mt-3 text-slate-400 text-sm">
+                          <li>
+                            El <strong>codi font</strong> es distribueix lliurement sota la llicència <a href="LICENSE.txt" target="_blank" className="text-blue-400 hover:underline">AGPL v3</a>.
+                          </li>
+                          <li>
+                            El <strong>contingut educatiu</strong> (el banc de paraules i el disseny instruccional) s'ofereix sota <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" className="text-blue-400 hover:underline">Creative Commons CC BY-SA 4.0</a>.
+                          </li>
+                        </ul>
+                      </section>
+                    </div>
+
+                    <div className="mt-10 text-center">
+                      <button onClick={() => setPhase(0)} className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold text-xl transition-all shadow-lg hover:scale-105 text-white">
+                        Tornar a l'Inici
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* FASE 1: LA PLUJA DE LLETRES (FÀCILS) */}
+                {phase === 1 && (
+                  <div className="w-full max-w-6xl mx-auto flex flex-col items-center">
+                    <div className="flex justify-between w-full items-end mb-12">
+                      <div className={`text-3xl font-black py-3 px-8 rounded-2xl border-4 ${f1Turn === 'A' ? 'bg-blue-600/30 border-blue-400 text-blue-200' : 'bg-red-600/30 border-red-400 text-red-200'}`}>
+                        TORN: EQUIP {f1Turn}
+                      </div>
+                      
+                      <div className="flex flex-col items-center">
+                        <div className={`text-8xl font-black font-mono tabular-nums tracking-tighter ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-yellow-400'} drop-shadow-[0_0_20px_rgba(250,204,21,0.4)]`}>
+                          {formatTime(timeLeft)}
+                        </div>
+                        {isTimerRunning ? (
+                          <button 
+                            onClick={() => setIsTimerRunning(false)} 
+                            className="mt-4 flex items-center gap-2 text-lg font-bold bg-amber-500 hover:bg-amber-400 text-white px-6 py-2 rounded-full transition shadow-md active:scale-95"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                            Pausar
+                          </button>
+                        ) : (
+                          <div className="mt-4 flex items-center justify-center gap-3">
+                            {timeLeft === 120 ? (
+                              <button 
+                                onClick={() => setIsTimerRunning(true)} 
+                                className="flex items-center gap-2 text-lg font-bold bg-green-500 hover:bg-green-400 text-white px-6 py-2 rounded-full transition shadow-md active:scale-95"
+                              >
+                                <Play size={20} fill="currentColor" /> Iniciar Temps
+                              </button>
+                            ) : timeLeft === 0 ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <span className="text-xl font-bold text-red-400">Temps esgotat!</span>
+                                <button 
+                                  onClick={() => { setTimeLeft(120); setIsTimerRunning(false); }} 
+                                  className="flex items-center gap-1.5 text-xs font-bold bg-slate-700 hover:bg-slate-650 text-slate-200 px-3.5 py-2 rounded-full transition shadow-md active:scale-95"
+                                >
+                                  <RotateCcw size={14} /> Reiniciar torn
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <button 
+                                  onClick={() => setIsTimerRunning(true)} 
+                                  className="flex items-center gap-2 text-lg font-bold bg-green-500 hover:bg-green-400 text-white px-6 py-2 rounded-full transition shadow-md active:scale-95"
+                                >
+                                  <Play size={20} fill="currentColor" /> Reprendre
+                                </button>
+                                <button 
+                                  onClick={() => { setTimeLeft(120); setIsTimerRunning(false); }} 
+                                  className="flex items-center gap-1.5 text-xs font-bold bg-slate-700 hover:bg-slate-650 text-slate-200 px-3.5 py-2 rounded-full transition shadow-md active:scale-95"
+                                  title="Reiniciar el temps a 120s"
+                                >
+                                  <RotateCcw size={14} /> Reiniciar
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-white/10 backdrop-blur-sm border border-white/20 w-full rounded-3xl py-20 px-8 flex flex-col md:flex-row items-center justify-center gap-6 shadow-2xl relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-50"></div>
+                      <h2 className="text-8xl md:text-9xl font-black tracking-tight text-white drop-shadow-xl text-center select-none uppercase">
+                        {currentWord}
+                      </h2>
+                      <button 
+                        onClick={() => speakWord(currentWord)}
+                        className="p-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full transition-all hover:scale-110 active:scale-95 text-yellow-400 hover:text-yellow-300"
+                        title="Dictar paraula amb veu"
+                      >
+                        <Volume2 size={36} />
+                      </button>
+                    </div>
+
+                    <div className="mt-12 flex gap-6">
+                      <button onClick={handleF1Incorrect} disabled={timeLeft === 0 || !isTimerRunning} className="flex flex-col items-center justify-center w-32 h-32 bg-red-600/80 hover:bg-red-500 rounded-2xl border-b-8 border-red-800 active:border-b-0 active:translate-y-2 transition-all disabled:opacity-50">
+                        <X size={48} />
+                        <span className="font-bold mt-2">Passa (0)</span>
+                      </button>
+                      <button onClick={handleF1Correct} disabled={timeLeft === 0 || !isTimerRunning} className="flex flex-col items-center justify-center w-40 h-40 bg-green-500/90 hover:bg-green-400 rounded-2xl border-b-8 border-green-700 active:border-b-0 active:translate-y-2 transition-all transform hover:scale-105 disabled:opacity-50 shadow-[0_0_30px_rgba(34,197,94,0.4)]">
+                        <Check size={64} />
+                        <span className="font-bold mt-2 text-xl">Correcte (+10)</span>
+                      </button>
+                    </div>
+
+                    {timeLeft === 0 && (
+                      <div className="mt-12">
+                        {f1Turn === 'A' ? (
+                          <button onClick={switchF1Turn} className="px-8 py-4 bg-blue-600 hover:bg-blue-500 rounded-full font-bold text-xl flex items-center gap-3">
+                            Torn Equip B <ArrowRight size={24} />
+                          </button>
+                        ) : (
+                          <button onClick={transitionToPhase2} className="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-indigo-900 rounded-full font-black text-xl flex items-center gap-3">
+                            Passar a la Fase 2 <ArrowRight size={24} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* FASE 2: EL REBOT (MITJANES) */}
+                {phase === 2 && (
+                  <div className="w-full max-w-5xl mx-auto flex flex-col items-center text-center">
+                    <div className={`mb-10 inline-block px-10 py-4 rounded-full border-4 shadow-[0_0_30px_rgba(255,255,255,0.2)] ${f2Turn === 'A' ? 'bg-blue-800/60 border-blue-400' : 'bg-red-800/60 border-red-400'}`}>
+                      <h3 className="text-3xl font-black text-white flex items-center gap-4">
+                        Torn actual: 
+                        <span className={f2Turn === 'A' ? 'text-blue-300' : 'text-red-300'}>
+                          Equip {f2Turn}
+                        </span>
+                        <span className="opacity-60">|</span>
+                        <span className="text-yellow-300">Jugador {f2Turn === 'A' ? playerA : playerB}</span>
+                      </h3>
+                    </div>
+
+                    <div className="w-full bg-slate-800/80 backdrop-blur-md rounded-[3rem] p-16 shadow-2xl border border-slate-600 relative overflow-hidden mb-12 flex flex-col md:flex-row items-center justify-center gap-6">
+                      {isRebounded && <div className="absolute top-0 left-0 w-full h-full border-8 border-orange-500/50 rounded-[3rem] pointer-events-none animate-pulse"></div>}
+                      
+                      <div className="flex-grow">
+                        <p className="text-slate-400 text-xl font-bold mb-4 uppercase tracking-widest">{isRebounded ? 'PARAULA EN REBOT (MITJÀ)' : 'Paraula a lletrejar (MITJÀ):'}</p>
+                        <h2 className={`text-7xl md:text-8xl font-black text-white tracking-wide uppercase transition-colors ${isRebounded ? 'text-orange-400' : ''}`}>
+                          {currentWord}
+                        </h2>
+                      </div>
+                      <button 
+                        onClick={() => speakWord(currentWord)}
+                        className="p-4 bg-slate-700/55 hover:bg-slate-700/80 border border-slate-650 rounded-full transition-all hover:scale-110 active:scale-95 text-yellow-400"
+                        title="Dictar paraula amb veu"
+                      >
+                        <Volume2 size={36} />
+                      </button>
+                    </div>
+
+                    <div className="flex gap-6 w-full max-w-3xl justify-center">
+                      <button onClick={handleF2Cancel} className="flex-1 py-6 bg-slate-700 hover:bg-slate-600 rounded-2xl font-bold text-xl flex flex-col items-center justify-center gap-2 border-b-4 border-slate-900 active:border-b-0 active:translate-y-1 transition-all">
+                        <X size={32} className="text-red-400"/> Anul·lar
+                      </button>
+                      
+                      <button onClick={handleF2Rebound} disabled={isRebounded} className="flex-1 py-6 bg-orange-600 hover:bg-orange-500 rounded-2xl font-bold text-2xl flex flex-col items-center justify-center gap-2 border-b-8 border-orange-800 active:border-b-0 active:translate-y-2 transition-all disabled:opacity-35 disabled:pointer-events-none shadow-[0_0_20px_rgba(234,88,12,0.4)]">
+                        <RefreshCcw size={40} /> Rebot
+                      </button>
+                      
+                      <button onClick={handleF2Correct} className="flex-1 py-6 bg-green-500 hover:bg-green-400 text-slate-900 rounded-2xl font-black text-2xl flex flex-col items-center justify-center gap-2 border-b-8 border-green-700 active:border-b-0 active:translate-y-2 transition-all shadow-[0_0_20px_rgba(34,197,94,0.4)]">
+                        <Check size={40} /> Correcte (+20)
+                      </button>
+                    </div>
+
+                    <div className="mt-16 text-right w-full">
+                      <button onClick={transitionToPhase3} className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-medium text-lg inline-flex items-center gap-2 transition">
+                        Saltar a La Gran Final <ArrowRight size={20}/>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* FASE 3: LA GRAN FINAL (DIFÍCILS) */}
+                {phase === 3 && (
+                  <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
+                    <div className="mb-8 text-center">
+                      <h2 className="text-2xl font-medium text-indigo-300 tracking-widest uppercase mb-2">Paraula a la pissarra (DIFÍCIL)</h2>
+                      <p className="text-slate-400 font-mono">Paraula {f3WordsPlayed + 1} de 6</p>
+                    </div>
+
+                    <div className={`w-full min-h-[20rem] py-8 px-6 rounded-[3rem] flex flex-col md:flex-row items-center justify-center gap-12 border-4 shadow-2xl transition-all duration-700 mb-12 ${wordRevealed ? 'bg-indigo-600 border-indigo-400 shadow-[0_0_50px_rgba(79,70,229,0.5)]' : 'bg-slate-800 border-slate-700'}`}>
+                      {!wordRevealed ? (
+                        <div className="flex flex-col md:flex-row gap-12 items-center px-8">
+                          
+                          {/* Botó dictat a cegues */}
+                          <button 
+                            onClick={() => speakWord(currentWord)}
+                            className="group flex flex-col items-center gap-4 text-yellow-400 hover:text-yellow-300 transition-colors"
+                          >
+                            <div className="p-6 bg-slate-700/50 group-hover:bg-slate-700 rounded-full transition shadow-md">
+                              <Volume2 size={64} className="group-hover:scale-110 transition-transform duration-300"/>
+                            </div>
+                            <span className="text-xl font-bold tracking-widest uppercase">🔊 Dictar Paraula</span>
+                          </button>
+ 
+                           <div className="w-px h-24 bg-slate-750 hidden md:block"></div>
+ 
+                           {/* Botó de revelació visual */}
+                          <button 
+                            onClick={() => { setWordRevealed(true); playSound('correct'); }}
+                            className="group flex flex-col items-center gap-4 text-slate-450 hover:text-white transition-colors"
+                          >
+                            <div className="p-6 bg-slate-700/50 group-hover:bg-slate-700 rounded-full transition shadow-md">
+                              <Eye size={64} className="group-hover:scale-110 transition-transform duration-300"/>
+                            </div>
+                            <span className="text-xl font-bold tracking-widest uppercase">👁️ Revelar Paraula</span>
+                          </button>
+ 
+                         </div>
+                       ) : (
+                        <div className="flex flex-col md:flex-row items-center justify-center gap-6 px-4 w-full">
+                          <h2 className={`font-black text-white uppercase tracking-tighter drop-shadow-2xl animate-fade-in-up text-center break-words break-all ${
+                            currentWord.length > 18 ? 'text-4xl sm:text-5xl md:text-6xl' :
+                            currentWord.length > 14 ? 'text-5xl sm:text-6xl md:text-7xl' :
+                            currentWord.length > 10 ? 'text-6xl sm:text-7xl md:text-8xl' :
+                            'text-7xl sm:text-8xl md:text-[10rem]'
+                          }`}>
+                             {currentWord}
+                           </h2>
+                          <button 
+                            onClick={() => speakWord(currentWord)}
+                            className="p-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full transition-all hover:scale-110 active:scale-95 text-yellow-400 hover:text-yellow-300 shrink-0"
+                            title="Tornar a dictar"
+                          >
+                            <Volume2 size={36} />
+                          </button>
+                        </div>
+                       )}
+                     </div>
+ 
+                     {wordRevealed && (
+                       <div className="w-full flex flex-col items-center animate-fade-in-up">
+                        <div className="flex flex-col sm:flex-row gap-6 w-full justify-center mb-8 px-4">
+                          <button 
+                            onClick={handleF3ToggleA} 
+                            className={`flex-1 max-w-sm py-5 rounded-2xl font-black text-xl sm:text-2xl flex items-center justify-center gap-3 border-b-8 transition-all active:border-b-0 active:translate-y-2 shadow-lg ${
+                              f3WordScored.A 
+                                ? 'bg-blue-600 border-blue-800 text-white hover:bg-blue-500' 
+                                : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:bg-slate-800 hover:text-slate-300'
+                            }`}
+                          >
+                            <Check size={28} className={f3WordScored.A ? 'text-white' : 'text-slate-500'}/> 
+                            Encert Equip A {f3WordScored.A && <span className="text-xs bg-blue-900/65 px-2.5 py-0.5 rounded border border-blue-400/20 ml-1">+30</span>}
+                          </button>
+                          
+                          <button 
+                            onClick={handleF3ToggleB} 
+                            className={`flex-1 max-w-sm py-5 rounded-2xl font-black text-xl sm:text-2xl flex items-center justify-center gap-3 border-b-8 transition-all active:border-b-0 active:translate-y-2 shadow-lg ${
+                              f3WordScored.B 
+                                ? 'bg-red-600 border-red-800 text-white hover:bg-red-500' 
+                                : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:bg-slate-800 hover:text-slate-300'
+                            }`}
+                          >
+                            <Check size={28} className={f3WordScored.B ? 'text-white' : 'text-slate-500'}/> 
+                            Encert Equip B {f3WordScored.B && <span className="text-xs bg-red-900/65 px-2.5 py-0.5 rounded border border-red-400/20 ml-1">+30</span>}
+                          </button>
+                         </div>
+                         
+                         <button onClick={handleF3Next} className="px-10 py-4 bg-yellow-500 hover:bg-yellow-400 text-indigo-900 rounded-full font-black text-xl flex items-center gap-3 shadow-xl hover:scale-105 transition-transform">
+                           Següent Paraula <ArrowRight size={24}/>
+                         </button>
+                       </div>
+                     )}
+                  </div>
+                )}
+
+                {/* RESULTATS DE LA PARTIDA (PHASE 4) */}
+                {phase === 4 && (
+                  <div className="text-center animate-fade-in-up z-10">
+                    <Confetti />
+                    
+                    <div className="mb-6 inline-block">
+                      <Trophy size={120} className="text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.6)] mx-auto mb-6 animate-bounce" />
+                    </div>
+                    
+                    <h2 className="text-5xl font-black text-white mb-4">I l'equip guanyador és...</h2>
+                    
+                    <div className={`text-8xl font-black mb-12 p-10 rounded-[3rem] inline-block shadow-[0_0_80px_rgba(255,255,255,0.2)] ${scoreA > scoreB ? 'bg-blue-600 text-white' : scoreB > scoreA ? 'bg-red-600 text-white' : 'bg-purple-600 text-white'}`}>
+                      {scoreA > scoreB ? 'L\'EQUIP A!' : scoreB > scoreA ? 'L\'EQUIP B!' : 'EMPAT TÈCNIC!'}
+                    </div>
+
+                    <div className="flex justify-center gap-16 mb-16">
+                      <div className="text-center">
+                        <p className="text-xl text-blue-300 font-bold mb-2">Puntuació Final A</p>
+                        <p className="text-5xl font-black">{scoreA} pts</p>
+                      </div>
+                      <div className="w-1 bg-white/20 rounded-full"></div>
+                      <div className="text-center">
+                        <p className="text-xl text-red-300 font-bold mb-2">Puntuació Final B</p>
+                        <p className="text-5xl font-black">{scoreB} pts</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap justify-center gap-6">
+                      <button onClick={() => setPhase(5)} className="px-8 py-4 bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 rounded-full font-bold text-lg flex items-center gap-3 transition shadow-md">
+                        <Eye size={24} /> Veure i Exportar Errors ({failedWords.length})
+                      </button>
+                      <button onClick={() => window.location.reload()} className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold text-lg flex items-center gap-3 transition shadow-md">
+                        <RotateCcw size={24} /> Tornar a Jugar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* REPÀS D'ERRORS I AVALUACIÓ (PHASE 5) */}
+                {phase === 5 && (
+                  <div className="w-full max-w-4xl mx-auto bg-slate-800/90 rounded-3xl p-10 shadow-2xl border border-slate-600 animate-fade-in-up">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                      <div>
+                        <h2 className="text-4xl font-black text-white flex items-center gap-4">
+                          <Eye className="text-yellow-400" size={40}/>
+                          Repàs d'Errors (Gabarró)
+                        </h2>
+                        <p className="text-slate-400 mt-2 text-md">Visualització formativa dels errors registrats. Els alumnes han de fixar la imatge gràfica de la paraula correcta.</p>
+                      </div>
+                      
+                      {failedWords.length > 0 && (
+                        <button 
+                          onClick={exportErrorsCSV}
+                          className="flex items-center gap-2 py-3 px-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-95"
+                          title="Exporta la llista d'errors en format CSV per a fitxes de reforç"
+                        >
+                          <Download size={18} /> Exportar Errors CSV
+                        </button>
+                      )}
+                    </div>
+                    
+                    {failedWords.length === 0 ? (
+                      <div className="text-center py-16 text-2xl font-bold text-green-400 bg-slate-900/50 rounded-2xl border border-green-500/20">
+                        Increïble! No hi ha hagut cap error en tota la partida! 🎉
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {failedWords.map((fw, idx) => (
+                          <div key={idx} className="bg-slate-700/50 hover:bg-slate-750 text-white font-bold text-2xl py-4 px-6 rounded-xl text-center border-l-4 border-red-500 transition-colors flex items-center justify-between cursor-default group shadow-sm">
+                            <span className="uppercase">{fw}</span>
+                            <button 
+                              onClick={() => speakWord(fw)}
+                              className="p-1 text-slate-400 hover:text-yellow-400 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+                              title="Escoltar pronunciació"
+                            >
+                              <Volume2 size={18} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="mt-12 text-center border-t border-slate-700 pt-6">
+                      <button onClick={() => setPhase(4)} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold text-lg transition shadow-md">
+                        Tornar als Resultats
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              </main>
+
+              {/* BARRA DE NAVEGACIÓ DEL DOCENT (CONTROL DE FASES I RETORN) */}
+              {phase > 0 && (
+                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 bg-slate-900/90 border border-slate-750 backdrop-blur-md px-4 py-2 rounded-2xl shadow-2xl flex items-center justify-center gap-2 max-w-[95vw] overflow-x-auto">
+                  <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase mr-1 border-r border-slate-700/60 pr-2">🛠️ Control:</span>
+                  <button 
+                    onClick={() => {
+                      if (confirm("Segur que vols tornar a la pantalla inicial? Es perdrà la partida actual.")) {
+                        goToPhase(0);
+                      }
+                    }} 
+                    className="flex items-center gap-1 px-2.5 py-1.5 bg-red-600/80 hover:bg-red-500 border border-red-500/20 text-white text-xs font-bold rounded-lg transition-all active:scale-95 whitespace-nowrap"
+                    title="Tornar al menú principal i reiniciar marcadors"
+                  >
+                    🏠 Inici
+                  </button>
+                  <div className="w-px h-5 bg-slate-700/60 mx-1"></div>
+                  <button 
+                    onClick={() => goToPhase(1)} 
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 1 ? 'bg-indigo-650 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
+                    title="Anar a la Fase 1 (La Pluja de Lletres)"
+                  >
+                    Fase 1 (Pluja)
+                  </button>
+                  <button 
+                    onClick={() => goToPhase(2)} 
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 2 ? 'bg-indigo-650 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
+                    title="Anar a la Fase 2 (El Rebot)"
+                  >
+                    Fase 2 (Rebot)
+                  </button>
+                  <button 
+                    onClick={() => goToPhase(3)} 
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 3 ? 'bg-indigo-650 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
+                    title="Anar a la Fase 3 (La Gran Final)"
+                  >
+                    Fase 3 (Final)
+                  </button>
+                  <button 
+                    onClick={() => goToPhase(4)} 
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 4 ? 'bg-indigo-650 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
+                    title="Anar a la Pantalla de Resultats"
+                  >
+                    🏆 Resultats
+                  </button>
+                  <button 
+                    onClick={() => goToPhase(5)} 
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 5 ? 'bg-indigo-650 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
+                    title="Anar al Repàs d'Errors"
+                  >
+                    ⚠️ Errors
+                  </button>
+                </div>
+              )}
+
+              {/* PEU DE PÀGINA */}
+              {(phase === 0 || phase === 6) && (
+                <footer className="w-full py-6 mt-12 bg-black/40 text-center text-xs text-slate-350 border-t border-white/10 backdrop-blur-md">
+                  <div className="flex flex-col items-center justify-center gap-1.5">
+                    <p className="font-semibold">&copy; 2026 David Cordones</p>
+                    <p className="flex items-center justify-center gap-2 flex-wrap">
+                      <span>
+                        Llicència del codi: <a href="LICENSE.txt" target="_blank" className="text-blue-400 hover:text-white transition-colors underline">AGPL v3</a>
+                      </span>
+                      <span className="opacity-50">·</span>
+                      <span className="flex items-center gap-2">
+                        Contingut:
+                        <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-white transition-colors underline flex items-center gap-1.5">
+                          CC BY-SA 4.0
+                          <span className="flex items-center gap-0.5 ml-0.5 bg-white px-1 py-0.5 rounded shadow-sm">
+                            <img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt="CC" className="h-3.5 opacity-90" />
+                            <img src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt="BY" className="h-3.5 opacity-90" />
+                            <img src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt="SA" className="h-3.5 opacity-90" />
+                          </span>
+                        </a>
+                      </span>
+                    </p>
+                  </div>
+                </footer>
+              )}
+
+              <style>{`
+                @keyframes fadeInUp {
+                  from { opacity: 0; transform: translateY(20px); }
+                  to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in-up {
+                  animation: fadeInUp 0.6s ease-out forwards;
+                }
+              `}</style>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
