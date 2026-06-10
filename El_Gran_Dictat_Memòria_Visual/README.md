@@ -62,51 +62,6 @@ El repositori es compon dels següents fitxers principals:
 
 ---
 
-## 🚀 **Com pujar-lo a GitHub i activar GitHub Pages**
-
-Per poder accedir al joc des de qualsevol dispositiu de l'escola (ordenador de l'aula, tauletes o mòbils) i garantir que **les veus de Google català en línia funcionin perfectament**, és recomanable publicar l'aplicació a GitHub Pages.
-
-### 📋 Pas 1: Crear el repositori a GitHub
-1. Entra a [GitHub](https://github.com/) (crea un compte gratuït si no en tens un).
-2. Fes clic al botó **New** (Nou repositori) a la cantonada superior.
-3. Completa les opcions:
-   * **Repository name:** `gran-dictat-gabarro` (o el nom que vulguis).
-   * **Public:** Selecciona **Public** (és necessari per poder utilitzar GitHub Pages de forma gratuïta).
-   * Deixa les altres opcions en blanc i prem **Create repository**.
-
-### 💻 Pas 2: Pujar els fitxers
-Hi ha dues maneres de pujar el joc al teu nou repositori:
-
-#### Opció A: Directament des del navegador (La més senzilla)
-1. A la pantalla de benvinguda del repositori, fes clic a l'enllaç que diu **uploading an existing file** (penjar un fitxer existent).
-2. Selecciona i arrossega els fitxers de la teva carpeta local (`el_gran_dictat_custom.html`, `el_gran_dictat_original.html`, `Documentació del projecte.md`, `README.md`, etc.) a la zona de càrrega.
-3. Espera que es carreguin i, a la part inferior, fes clic al botó verd **Commit changes** (Desar els canvis).
-
-#### Opció B: Utilitzant Git (Consola de comandes)
-Si tens Git instal·lat a la teva màquina, obre una terminal a la carpeta local del projecte i executa:
-```bash
-git init
-git add .
-git commit -m "Versió customitzada de El Gran Dictat amb navegació i veus"
-git branch -M main
-git remote add origin https://github.com/EL_TEU_USUARI/gran-dictat-gabarro.git
-git push -u origin main
-```
-*(Substitueix `EL_TEU_USUARI` pel teu nom d'usuari de GitHub).*
-
-### 🌐 Pas 3: Activar GitHub Pages (Joc en línia)
-Una vegada els fitxers estiguin publicats al teu repositori:
-1. Vés a la pestanya ⚙️ **Settings** (Configuració) del teu repositori a GitHub.
-2. Al menú de l'esquerra, clica sobre **Pages** (dins de la secció *Code and automation*).
-3. A la secció **Build and deployment**:
-   * Sota *Source*, assegura't que està seleccionat **Deploy from a branch**.
-   * Sota *Branch*, canvia *None* per **main** (o la teva branca principal) i prem **Save** (Desar).
-4. Espera aproximadament 1 minut. Recarrega la pàgina de configuració i a la part superior veuràs una caixa indicant que el lloc ja està publicat:
-   > 🔗 **Your site is live at:** `https://EL_TEU_USUARI.github.io/gran-dictat-gabarro/el_gran_dictat_custom.html`
-5. Comparteix o desa aquest enllaç als favorits del navegador de la Pissarra Digital de l'aula!
-
----
-
 ## 📜 **Llicències i Autoria**
 
 **© 2026 David Cordones**
