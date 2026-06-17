@@ -1,13 +1,4 @@
 <!DOCTYPE html>
-<!--
-  El Gran Dictat - Versió Millorada amb Funcionalitats Tecnopedagògiques i Dificultat Escalonada
-  Copyright (C) 2026 David Cordones
-
-  Aquest programa és programari lliure: podeu redistribuir-lo i/o modificar-lo
-  sota els termes de la Llicència Pública General Affero de GNU (AGPL v3)
-  publicada per la Free Software Foundation, ja sigui la versió 3 de la
-  Llicència, o (a la vostra elecció) qualsevol versió posterior.
--->
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
@@ -15,12 +6,9 @@
     <title>El Gran Dictat - Mètode Gabarró</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <!-- Babel per compilar JSX al navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         body { 
@@ -36,6 +24,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        /* @jsxRuntime classic */
         const { useState, useEffect, useCallback, useMemo } = React;
 
         // --- ICONES SVG ---
@@ -49,7 +38,7 @@
         const X = (props) => <IconBase {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconBase>;
         const RefreshCcw = (props) => <IconBase {...props}><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></IconBase>;
         const Eye = (props) => <IconBase {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></IconBase>;
-        const Trophy = (props) => <IconBase {...props}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></IconBase>;
+        const Trophy = (props) => <IconBase {...props}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55./47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></IconBase>;
         const ArrowRight = (props) => <IconBase {...props}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></IconBase>;
         const RotateCcw = (props) => <IconBase {...props}><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></IconBase>;
         const Info = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></IconBase>;
@@ -327,10 +316,8 @@
             }, 500);
 
             return () => {
+              window.speechSynthesis.removeEventListener('voiceschanged', updateVoices);
               clearTimeout(timer);
-              if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-                window.speechSynthesis.removeEventListener('voiceschanged', updateVoices);
-              }
             };
           }, [updateVoices]);
 
@@ -711,7 +698,7 @@
             setWordRevealed(false);
             setF3WordScored({ A: false, B: false });
  
-             playSound('correct');
+            playSound('correct');
           };
 
           const transitionToPhase2 = () => {
@@ -941,7 +928,7 @@
           }, [activeWordObjects, searchQuery]);
 
           return (
-            <div className={`min-h-screen text-white font-sans transition-colors duration-500 relative flex flex-col ${phase === 3 && !wordRevealed ? 'bg-slate-955' : 'bg-transparent'}`}>
+            <div className={`min-h-screen text-white font-sans transition-colors duration-500 relative flex flex-col ${phase === 3 && !wordRevealed ? 'bg-slate-950' : 'bg-transparent'}`}>
               
               {/* CAPÇALERA DEL JOC */}
               {phase > 0 && phase < 5 && (
@@ -1009,7 +996,7 @@
                       </div>
                     </div>
 
-                    {/* COLUMNA DRETA: CONFIGURACIÓ (DASHBOARD DOBLE) */}
+                    {/* COLUMNA DRETA: CONFIGURACIÓ */}
                     <div className="lg:col-span-5 flex flex-col gap-6 justify-center w-full max-w-md mx-auto animate-fade-in-up">
                       
                       {/* CARD 1: CONFIGURACIÓ DE PARAULES */}
@@ -1019,7 +1006,6 @@
                           Banc de Paraules
                         </h3>
                         
-                        {/* Canviador d'origen */}
                         <div className="flex bg-slate-900/60 p-1 rounded-xl mb-4 border border-slate-700/50">
                           <button 
                             onClick={() => { setWordSource('default'); localStorage.setItem('gabarro_word_source', 'default'); }}
@@ -1035,7 +1021,6 @@
                           </button>
                         </div>
                         
-                        {/* Comptador de paraules */}
                         <div className="mb-4 flex justify-between items-center text-xs sm:text-sm bg-slate-900/40 p-3 rounded-xl border border-slate-700/50">
                           <span className="text-slate-400 font-semibold">Paraules actives:</span>
                           <span className="text-lg font-black text-white bg-indigo-500/20 px-2.5 py-0.5 rounded-lg border border-indigo-500/30">
@@ -1043,7 +1028,6 @@
                           </span>
                         </div>
                         
-                        {/* Accions segons l'origen */}
                         <div className="space-y-3">
                           {wordSource === 'custom' && (
                             <div className="grid grid-cols-2 gap-2">
@@ -1072,18 +1056,17 @@
                             )}
                             <button 
                               onClick={downloadTemplateCSV}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-700/60 hover:bg-slate-700/90 border border-slate-650 text-slate-350 rounded-xl font-bold text-xs sm:text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-700/60 hover:bg-slate-700/90 border border-slate-600 text-slate-300 rounded-xl font-bold text-xs sm:text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
                               title="Plantilla de columnes: facil, mitja, dificil, auto"
                             >
                               <Download size={16} /> Plantilla CSV
                             </button>
                           </div>
                           
-                          {/* Botó obrir editor visual */}
                           <div className="pt-1">
                             <button 
                               onClick={() => { setIsWordManagerOpen(true); playSound('correct'); }}
-                              className="w-full py-3 bg-slate-900 hover:bg-slate-955 border border-slate-700 rounded-xl font-bold text-xs sm:text-sm text-slate-350 hover:text-white transition-all flex items-center justify-center gap-2 shadow-md"
+                              className="w-full py-3 bg-slate-900 hover:bg-slate-950 border border-slate-700 rounded-xl font-bold text-xs sm:text-sm text-slate-300 hover:text-white transition-all flex items-center justify-center gap-2 shadow-md"
                             >
                               👁️ Veure i editar les paraules
                             </button>
@@ -1091,18 +1074,17 @@
                         </div>
                       </div>
 
-                      {/* CARD 2: CONFIGURACIÓ DE LA VEU DEL DICTAT AMB INSTRUCCIONS DE RESOLUCIÓ D'ERRORS */}
+                      {/* CARD 2: CONFIGURACIÓ DE LA VEU */}
                       <div className="bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-3xl p-6 shadow-2xl text-left w-full">
                         <h3 className="text-xl sm:text-2xl font-black text-yellow-400 mb-5 flex items-center gap-2">
                           <Volume2 className="text-yellow-400" size={24} />
                           Configuració del Dictat
                         </h3>
                         
-                        {/* Selector de Veu o Missatge d'error amb explicació detallada d'instal·lació */}
                         <div className="mb-4">
                           <label className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block mb-1.5">Veu de síntesi:</label>
                           {voices.length === 0 ? (
-                            <div className="text-[11px] text-yellow-350 bg-yellow-500/10 border border-yellow-500/25 p-3 rounded-xl space-y-1.5">
+                            <div className="text-[11px] text-yellow-300 bg-yellow-500/10 border border-yellow-500/25 p-3 rounded-xl space-y-1.5">
                               <p className="font-bold">⚠️ No s'ha detectat cap veu en català instal·lada al sistema.</p>
                               <p>El dispositiu no té el paquet de síntesi en català actiu. Per solucionar-ho:</p>
                               <ul className="list-disc pl-4 space-y-1.5 mt-1 text-slate-300 font-medium">
@@ -1134,11 +1116,10 @@
                           )}
                         </div>
 
-                        {/* Control de Velocitat del Dictat */}
                         <div>
                           <label className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block mb-1.5 flex justify-between">
                             <span>Velocitat de lectura:</span>
-                            <span className="text-indigo-350 font-black">
+                            <span className="text-indigo-300 font-black">
                               {speechRate === 1 ? 'Normal' : speechRate < 0.8 ? 'Molt lenta' : speechRate < 1 ? 'Pausada' : 'Ràpida'} ({speechRate}x)
                             </span>
                           </label>
@@ -1149,7 +1130,7 @@
                             step="0.05"
                             value={speechRate}
                             onChange={(e) => setSpeechRate(Number(e.target.value))}
-                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-550 focus:outline-none"
+                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none"
                           />
                           <div className="flex justify-between text-[9px] text-slate-500 mt-1 font-semibold">
                             <span>Lenta (0.6x)</span>
@@ -1163,12 +1144,11 @@
                   </div>
                 )}
 
-                {/* MODAL DE GESTIÓ DE PARAULES (VISUAL EDITOR) - CORRETGIDA PER A ZOOM I OVERFLOW */}
+                {/* MODAL DE GESTIÓ DE PARAULES */}
                 {isWordManagerOpen && (
-                  <div className="fixed inset-0 bg-slate-955/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+                  <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
                     <div className="bg-slate-800 border border-slate-700 w-full max-w-2xl rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-fade-in-up">
                       
-                      {/* Capçalera del diàleg */}
                       <div className="flex justify-between items-center mb-3">
                         <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
                           📝 Edició del Banc de Paraules
@@ -1182,7 +1162,6 @@
                         </button>
                       </div>
 
-                      {/* Descripció del diàleg */}
                       <p className="text-slate-400 text-xs sm:text-sm mb-4">
                         {wordSource === 'default' 
                           ? "Llista de lectura del Mètode Gabarró. Les dificultats es calculen automàticament (Auto)."
@@ -1190,7 +1169,6 @@
                         }
                       </p>
 
-                      {/* Formulari d'afegir manualment amb dificultat */}
                       {wordSource === 'custom' && (
                         <form onSubmit={handleManualAddWord} className="flex flex-col sm:flex-row gap-2 mb-4">
                           <input 
@@ -1203,7 +1181,7 @@
                           <div className="flex gap-2">
                             <select 
                               id="manualDifficultySelect"
-                              className="px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-350 font-medium focus:outline-none focus:border-indigo-500 transition-colors text-xs sm:text-sm"
+                              className="px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-300 font-medium focus:outline-none focus:border-indigo-500 transition-colors text-xs sm:text-sm"
                             >
                               <option value="">Auto (Càlcul automàtic)</option>
                               <option value="1">1 - Fàcil (Fase 1)</option>
@@ -1220,7 +1198,6 @@
                         </form>
                       )}
 
-                      {/* Cercador */}
                       <div className="mb-3">
                         <input 
                           type="text" 
@@ -1231,7 +1208,6 @@
                         />
                       </div>
 
-                      {/* Llista de paraules amb alçada dinàmica scrollable */}
                       <div className="flex-grow overflow-y-auto bg-slate-900/40 border border-slate-700/40 rounded-2xl p-3 sm:p-4 min-h-[120px] mb-4">
                         {filteredWordsList.length === 0 ? (
                           <div className="text-center text-slate-500 py-8 text-sm sm:text-base">
@@ -1240,7 +1216,6 @@
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {filteredWordsList.map((item, idx) => {
-                              // Determinar la classificació final de la paraula
                               const getWordTierInfo = () => {
                                 if (item.difficulty === 1 || item.difficulty === 2 || item.difficulty === 3) {
                                   return { tier: item.difficulty, isManual: true };
@@ -1260,7 +1235,7 @@
                               return (
                                 <div 
                                   key={idx} 
-                                  className="flex justify-between items-center bg-slate-800/50 hover:bg-slate-750 border border-slate-700/30 px-3 py-2 rounded-xl transition-all"
+                                  className="flex justify-between items-center bg-slate-800/50 hover:bg-slate-700 border border-slate-700/30 px-3 py-2 rounded-xl transition-all"
                                 >
                                   <div className="flex flex-col truncate pr-2">
                                     <span className="font-semibold text-slate-200 text-sm sm:text-base truncate" title={item.word}>{item.word}</span>
@@ -1284,7 +1259,6 @@
                         )}
                       </div>
 
-                      {/* Botons de tancament a la base en flex fixat */}
                       <div className="flex justify-between items-center mt-auto pt-2 border-t border-slate-700/50">
                         {wordSource === 'custom' && (
                           <button 
@@ -1310,13 +1284,13 @@
 
                 {/* INSTRUCCIONS (PHASE 6) */}
                 {phase === 6 && (
-                  <div className="w-full max-w-5xl mx-auto bg-slate-800/90 rounded-3xl p-10 shadow-2xl border border-slate-650 animate-fade-in-up text-left overflow-y-auto max-h-[85vh]">
+                  <div className="w-full max-w-5xl mx-auto bg-slate-800/90 rounded-3xl p-10 shadow-2xl border border-slate-700 animate-fade-in-up text-left overflow-y-auto max-h-[85vh]">
                     <h2 className="text-4xl font-black text-yellow-400 mb-6 flex items-center gap-4">
                       <Info size={40}/>
                       Organització i Funcionament
                     </h2>
                     
-                    <div className="space-y-8 text-lg text-slate-350">
+                    <div className="space-y-8 text-lg text-slate-300">
                       <section>
                         <h3 className="text-2xl font-bold text-white mb-2">👥 Organització</h3>
                         <p>La classe es divideix en <strong>dos equips (Equip A i Equip B)</strong>. El docent actua com a presentador o àrbitre: valida les respostes, utilitza el sintetitzador de veu per a dictar la paraula i controla l'avanç del joc.</p>
@@ -1343,7 +1317,7 @@
                       </section>
 
                       <section className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700">
-                        <h3 className="text-2xl font-bold text-slate-100 mb-3 border-b border-slate-650 pb-2">📜 Autoria i Llicències</h3>
+                        <h3 className="text-2xl font-bold text-slate-100 mb-3 border-b border-slate-700 pb-2">📜 Autoria i Llicències</h3>
                         <p className="mb-2"><strong>El Gran Dictat</strong> - Joc educatiu creat per <strong>David Cordones</strong> (2026).</p>
                         <ul className="list-disc pl-5 space-y-2 mt-3 text-slate-400 text-sm">
                           <li>
@@ -1364,7 +1338,7 @@
                   </div>
                 )}
 
-                {/* FASE 1: LA PLUJA DE LLETRES (FÀCILS) */}
+                {/* FASE 1: LA PLUJA DE LLETRES */}
                 {phase === 1 && (
                   <div className="w-full max-w-6xl mx-auto flex flex-col items-center">
                     <div className="flex justify-between w-full items-end mb-12">
@@ -1466,7 +1440,7 @@
                   </div>
                 )}
 
-                {/* FASE 2: EL REBOT (MITJANES) */}
+                {/* FASE 2: EL REBOT */}
                 {phase === 2 && (
                   <div className="w-full max-w-5xl mx-auto flex flex-col items-center text-center">
                     <div className={`mb-10 inline-block px-10 py-4 rounded-full border-4 shadow-[0_0_30px_rgba(255,255,255,0.2)] ${f2Turn === 'A' ? 'bg-blue-800/60 border-blue-400' : 'bg-red-800/60 border-red-400'}`}>
@@ -1491,7 +1465,7 @@
                       </div>
                       <button 
                         onClick={() => speakWord(currentWord)}
-                        className="p-4 bg-slate-700/55 hover:bg-slate-700/80 border border-slate-650 rounded-full transition-all hover:scale-110 active:scale-95 text-yellow-400"
+                        className="p-4 bg-slate-700/55 hover:bg-slate-700/80 border border-slate-600 rounded-full transition-all hover:scale-110 active:scale-95 text-yellow-400"
                         title="Dictar paraula amb veu"
                       >
                         <Volume2 size={36} />
@@ -1520,7 +1494,7 @@
                   </div>
                 )}
 
-                {/* FASE 3: LA GRAN FINAL (DIFÍCILS) */}
+                {/* FASE 3: LA GRAN FINAL */}
                 {phase === 3 && (
                   <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
                     <div className="mb-8 text-center">
@@ -1532,7 +1506,6 @@
                       {!wordRevealed ? (
                         <div className="flex flex-col md:flex-row gap-12 items-center px-8">
                           
-                          {/* Botó dictat a cegues */}
                           <button 
                             onClick={() => speakWord(currentWord)}
                             className="group flex flex-col items-center gap-4 text-yellow-400 hover:text-yellow-300 transition-colors"
@@ -1543,12 +1516,11 @@
                             <span className="text-xl font-bold tracking-widest uppercase">🔊 Dictar Paraula</span>
                           </button>
  
-                           <div className="w-px h-24 bg-slate-750 hidden md:block"></div>
+                          <div className="w-px h-24 bg-slate-700 hidden md:block"></div>
  
-                           {/* Botó de revelació visual */}
                           <button 
                             onClick={() => { setWordRevealed(true); playSound('correct'); }}
-                            className="group flex flex-col items-center gap-4 text-slate-450 hover:text-white transition-colors"
+                            className="group flex flex-col items-center gap-4 text-slate-400 hover:text-white transition-colors"
                           >
                             <div className="p-6 bg-slate-700/50 group-hover:bg-slate-700 rounded-full transition shadow-md">
                               <Eye size={64} className="group-hover:scale-110 transition-transform duration-300"/>
@@ -1556,7 +1528,7 @@
                             <span className="text-xl font-bold tracking-widest uppercase">👁️ Revelar Paraula</span>
                           </button>
  
-                         </div>
+                        </div>
                        ) : (
                         <div className="flex flex-col md:flex-row items-center justify-center gap-6 px-4 w-full">
                           <h2 className={`font-black text-white uppercase tracking-tighter drop-shadow-2xl animate-fade-in-up text-center break-words break-all ${
@@ -1565,7 +1537,7 @@
                             currentWord.length > 10 ? 'text-6xl sm:text-7xl md:text-8xl' :
                             'text-7xl sm:text-8xl md:text-[10rem]'
                           }`}>
-                             {currentWord}
+                               {currentWord}
                            </h2>
                           <button 
                             onClick={() => speakWord(currentWord)}
@@ -1607,14 +1579,14 @@
                          </div>
                          
                          <button onClick={handleF3Next} className="px-10 py-4 bg-yellow-500 hover:bg-yellow-400 text-indigo-900 rounded-full font-black text-xl flex items-center gap-3 shadow-xl hover:scale-105 transition-transform">
-                           Següent Paraula <ArrowRight size={24}/>
+                            Següent Paraula <ArrowRight size={24}/>
                          </button>
                        </div>
                      )}
                   </div>
                 )}
 
-                {/* RESULTATS DE LA PARTIDA (PHASE 4) */}
+                {/* PANTALLA DE RESULTATS */}
                 {phase === 4 && (
                   <div className="text-center animate-fade-in-up z-10">
                     <Confetti />
@@ -1652,7 +1624,7 @@
                   </div>
                 )}
 
-                {/* REPÀS D'ERRORS I AVALUACIÓ (PHASE 5) */}
+                {/* REPÀS D'ERRORS */}
                 {phase === 5 && (
                   <div className="w-full max-w-4xl mx-auto bg-slate-800/90 rounded-3xl p-10 shadow-2xl border border-slate-600 animate-fade-in-up">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -1682,7 +1654,7 @@
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {failedWords.map((fw, idx) => (
-                          <div key={idx} className="bg-slate-700/50 hover:bg-slate-750 text-white font-bold text-2xl py-4 px-6 rounded-xl text-center border-l-4 border-red-500 transition-colors flex items-center justify-between cursor-default group shadow-sm">
+                          <div key={idx} className="bg-slate-700/50 hover:bg-slate-700 text-white font-bold text-2xl py-4 px-6 rounded-xl text-center border-l-4 border-red-500 transition-colors flex items-center justify-between cursor-default group shadow-sm">
                             <span className="uppercase">{fw}</span>
                             <button 
                               onClick={() => speakWord(fw)}
@@ -1706,9 +1678,9 @@
 
               </main>
 
-              {/* BARRA DE NAVEGACIÓ DEL DOCENT (CONTROL DE FASES I RETORN) */}
+              {/* BARRA DE NAVEGACIÓ DEL DOCENT */}
               {phase > 0 && (
-                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 bg-slate-900/90 border border-slate-750 backdrop-blur-md px-4 py-2 rounded-2xl shadow-2xl flex items-center justify-center gap-2 max-w-[95vw] overflow-x-auto">
+                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 bg-slate-900/90 border border-slate-700 backdrop-blur-md px-4 py-2 rounded-2xl shadow-2xl flex items-center justify-center gap-2 max-w-[95vw] overflow-x-auto">
                   <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase mr-1 border-r border-slate-700/60 pr-2">🛠️ Control:</span>
                   <button 
                     onClick={() => {
@@ -1724,35 +1696,35 @@
                   <div className="w-px h-5 bg-slate-700/60 mx-1"></div>
                   <button 
                     onClick={() => goToPhase(1)} 
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 1 ? 'bg-indigo-650 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 1 ? 'bg-indigo-700 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
                     title="Anar a la Fase 1 (La Pluja de Lletres)"
                   >
                     Fase 1 (Pluja)
                   </button>
                   <button 
                     onClick={() => goToPhase(2)} 
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 2 ? 'bg-indigo-650 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 2 ? 'bg-indigo-700 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
                     title="Anar a la Fase 2 (El Rebot)"
                   >
                     Fase 2 (Rebot)
                   </button>
                   <button 
                     onClick={() => goToPhase(3)} 
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 3 ? 'bg-indigo-650 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 3 ? 'bg-indigo-700 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
                     title="Anar a la Fase 3 (La Gran Final)"
                   >
                     Fase 3 (Final)
                   </button>
                   <button 
                     onClick={() => goToPhase(4)} 
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 4 ? 'bg-indigo-650 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 4 ? 'bg-indigo-700 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
                     title="Anar a la Pantalla de Resultats"
                   >
                     🏆 Resultats
                   </button>
                   <button 
                     onClick={() => goToPhase(5)} 
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 5 ? 'bg-indigo-650 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap ${phase === 5 ? 'bg-indigo-700 text-white border border-indigo-400/30' : 'bg-slate-800 text-slate-350 hover:text-white border border-slate-700/50'}`}
                     title="Anar al Repàs d'Errors"
                   >
                     ⚠️ Errors
@@ -1762,7 +1734,7 @@
 
               {/* PEU DE PÀGINA */}
               {(phase === 0 || phase === 6) && (
-                <footer className="w-full py-6 mt-12 bg-black/40 text-center text-xs text-slate-350 border-t border-white/10 backdrop-blur-md">
+                <footer className="w-full py-6 mt-12 bg-black/40 text-center text-xs text-slate-300 border-t border-white/10 backdrop-blur-md">
                   <div className="flex flex-col items-center justify-center gap-1.5">
                     <p className="font-semibold">&copy; 2026 David Cordones</p>
                     <p className="flex items-center justify-center gap-2 flex-wrap">
