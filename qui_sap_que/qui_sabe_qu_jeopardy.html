@@ -1,0 +1,2052 @@
+<!--
+  Qui Sabe Què? 2.0 - Edició Jeopardy
+  Copyright (C) 2026 David Cordones
+
+  Aquest programa és programari lliure: podeu redistribuir-lo i/o modificar-lo 
+  sota els termes de la Llicència Pública General Affero de GNU tal com està 
+  publicada per la Free Software Foundation, ja sigui la versió 3 de la 
+  Llicència, o bé (si ho preferiu) qualsevol versió posterior.
+
+  Aquest programa es distribueix amb l'esperança que sigui útil, però SENSE 
+  CAP GARANTIA; fins i tot sense la garantia implícita de COMERCIALITZACIÓ o 
+  ADEQUACIÓ PER A UN PROPÒSIT PARTICULAR. Vegeu la Llicència Pública General 
+  Affero de GNU per a més detalls.
+
+  Hauríeu d'haver rebut una còpia de la Llicència Pública General Affero de GNU 
+  juntament amb aquest programa. Si no és així, consulteu <https://www.gnu.org/licenses/>.
+-->
+<!DOCTYPE html>
+<html lang="ca" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qui Sabe Què? - Concurs Jeopardy i Generador IA</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for beautiful icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        
+        /* Custom animations for modern UI */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up {
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl">🧠</span>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-brand-600 to-indigo-600 bg-clip-text text-transparent dark:from-brand-400 dark:to-indigo-400">
+                        Qui Sabe Què? <span class="text-xs px-2 py-0.5 bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 rounded-full ml-1">Edició Jeopardy</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Concurs de preguntes per equips adaptat a les aules</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <!-- Current Active Team indicator in header -->
+                <div id="active-turn-indicator" class="hidden px-3 py-1.5 rounded-full text-xs font-bold animate-pulse"></div>
+                
+                <!-- Sound Toggle Button -->
+                <button id="header-sound-toggle" onclick="toggleMute()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition" title="So actiu / silenciat" aria-label="Canvia el so">
+                    <i id="header-sound-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+
+                <!-- Settings Toggle Button -->
+                <button id="settings-toggle" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition" title="Configuració del joc" aria-label="Configuració">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+
+                <!-- Fullscreen Toggle Button -->
+                <button id="fullscreen-toggle" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition" aria-label="Pantalla completa">
+                    <i class="fa-solid fa-expand" id="fullscreen-icon"></i>
+                </button>
+
+                <!-- Dark Mode Toggle -->
+                <button id="theme-toggle" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition" aria-label="Canvia el tema">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:inline"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 flex flex-col justify-center">
+        
+        <!-- SCREEN 1: SETUP SCREEN -->
+        <div id="screen-setup" class="space-y-6">
+            <div class="text-center space-y-2 py-2">
+                <div class="inline-flex p-4 bg-brand-100 dark:bg-brand-900/50 text-brand-600 dark:text-brand-300 rounded-2xl text-5xl mb-1 animate-bounce">
+                    <i class="fa-solid fa-people-group"></i>
+                </div>
+                <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white">Concurs de Jeopardy a l'Aula</h2>
+                <p class="text-slate-600 dark:text-slate-300 max-w-xl mx-auto text-sm">
+                    Crea equips, selecciona el curs dels teus alumnes i genera un tauler interactiu amb preguntes clàssiques o un tema lliure mitjançant IA.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left: Team Configuration (5 Cols) -->
+                <div class="lg:col-span-5 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-5">
+                    <h3 class="text-md font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-700 pb-2 flex items-center justify-between">
+                        <span class="flex items-center space-x-2">
+                            <i class="fa-solid fa-users text-brand-500"></i>
+                            <span>Equips Participants</span>
+                        </span>
+                        <button onclick="addTeam()" class="text-xs bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-300 px-2.5 py-1 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-900/40 transition">
+                            <i class="fa-solid fa-plus mr-1"></i> Afegir Equip
+                        </button>
+                    </h3>
+
+                    <!-- Dynamic list of teams -->
+                    <div id="teams-setup-container" class="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                        <!-- Default 3 teams will be rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Right: Content & Mode Configuration (7 Cols) -->
+                <div class="lg:col-span-7 space-y-6">
+                    <!-- Tab Selectors -->
+                    <div class="flex border-b border-slate-200 dark:border-slate-700">
+                        <button onclick="switchSetupTab('standard')" id="tab-standard" class="flex-1 py-3 text-center border-b-2 border-brand-600 text-brand-600 dark:text-brand-400 font-bold text-sm flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-table-cells"></i>
+                            <span>Tauler Estàndard</span>
+                        </button>
+                        <button onclick="switchSetupTab('ai')" id="tab-ai" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-semibold text-sm flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-brand-500 animate-pulse"></i>
+                            <span>Generar Tauler amb IA</span>
+                        </button>
+                    </div>
+
+                    <!-- Mode panel 1: Standard General Trivia Board -->
+                    <div id="panel-setup-standard" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+                        <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Configureu els paràmetres del tauler estàndard</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Course Select -->
+                            <div class="space-y-1">
+                                <label for="grade-select" class="block text-xs font-semibold text-slate-500">Curs escolar dels alumnes</label>
+                                <select id="grade-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                    <option value="primaria">Primària (6 - 12 anys)</option>
+                                    <option value="eso" selected>Secundària (ESO - 12 a 16 anys)</option>
+                                    <option value="batx">Batxillerat i Cicles (16+ anys)</option>
+                                </select>
+                            </div>
+
+                            <!-- Board Complexity -->
+                            <div class="space-y-1">
+                                <label for="difficulty-select" class="block text-xs font-semibold text-slate-500">Nivell de dificultat global</label>
+                                <select id="difficulty-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                    <option value="easy">Fàcil</option>
+                                    <option value="medium" selected>Mitjà (Recomanat)</option>
+                                    <option value="hard">Difícil / Expert</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-400 italic">El tauler estàndard inclou categories generals com Geografia, Ciència, Història, Esports i Cultura Pop.</p>
+
+                        <button onclick="startStandardJeopardy()" class="w-full bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Comença amb Tauler Estàndard</span>
+                        </button>
+                    </div>
+
+                    <!-- Mode panel 2: AI Custom Topic Board -->
+                    <div id="panel-setup-ai" class="hidden bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4 animate-fade-in">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Intel·ligència artificial integrada</h4>
+                            <span class="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-[10px] px-2 py-0.5 rounded font-extrabold uppercase">Gemini 2.5 Flash</span>
+                        </div>
+
+                        <!-- API Key Warning Alert -->
+                        <div id="ai-key-warning" class="hidden bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl p-3 text-xs text-amber-800 dark:text-amber-300 flex items-start space-x-2">
+                            <i class="fa-solid fa-triangle-exclamation text-base mt-0.5 animate-pulse text-amber-500"></i>
+                            <div>
+                                <p class="font-bold">Clau API de Gemini no configurada</p>
+                                <p class="mt-0.5">Per utilitzar la generació amb IA, has de configurar la teva Clau API. Prem la icona de la configuració <i class="fa-solid fa-gear"></i> a dalt a la dreta per introduir-la. És de franc i es desa localment!</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- AI Target Course -->
+                            <div class="space-y-1">
+                                <label for="ai-grade-select" class="block text-xs font-semibold text-slate-500">Curs escolar d'adaptació</label>
+                                <select id="ai-grade-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                    <option value="Cicle Inicial de Primària">Cicle Inicial Primària (1r i 2n)</option>
+                                    <option value="Cicle Mitjà de Primària">Cicle Mitjà Primària (3r i 4t)</option>
+                                    <option value="Cicle Superior de Primària">Cicle Superior Primària (5è i 6è)</option>
+                                    <option value="Educació Secundària Obligatòria (ESO)" selected>Educació Secundària (ESO - 1r a 4t)</option>
+                                    <option value="Batxillerat i Formació Professional">Batxillerat / Cicles Formatius</option>
+                                </select>
+                            </div>
+
+                            <!-- AI Topics (1 to 5 topics) input -->
+                            <div class="space-y-2">
+                                <label class="block text-xs font-semibold text-slate-500">Temes o Unitats Didàctiques (d'1 a 5)</label>
+                                <div class="space-y-2">
+                                    <input type="text" id="ai-topic-1" placeholder="Tema 1: Ex. El cicle de l'aigua (Obligatori)" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500" required>
+                                    <input type="text" id="ai-topic-2" placeholder="Tema 2: Ex. Els estats de la matèria (Opcional)" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                    <input type="text" id="ai-topic-3" placeholder="Tema 3: Opcional" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                    <input type="text" id="ai-topic-4" placeholder="Tema 4: Opcional" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                    <input type="text" id="ai-topic-5" placeholder="Tema 5: Opcional" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                </div>
+                                <p class="text-[10px] text-slate-450 leading-relaxed">
+                                    <strong>Com funciona:</strong> Si només escriviu el primer tema, la IA generarà el tauler complet a partir d'aquest. Si afegiu més temes, la IA distribuirà automàticament les 5 categories del concurs entre els diferents temes introduïts.
+                                </p>
+                            </div>
+                        </div>
+
+                        <button onclick="generateAiJeopardy()" class="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Generar Tauler Temàtic amb IA</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: THE JEOPARDY BOARD -->
+        <div id="screen-game-board" class="hidden space-y-6">
+            <!-- Game status headers -->
+            <div class="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div class="flex items-center space-x-3">
+                    <span class="p-2 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg text-indigo-600 dark:text-indigo-400">
+                        <i class="fa-solid fa-gamepad text-xl"></i>
+                    </span>
+                    <div>
+                        <p class="text-xs text-slate-400">Tauler actiu</p>
+                        <h4 id="board-topic-title" class="font-bold text-slate-800 dark:text-white">Concurs General de Coneixements</h4>
+                    </div>
+                </div>
+
+                <!-- Turn Indicator Card -->
+                <div class="flex items-center space-x-3 border-l pl-4 border-slate-200 dark:border-slate-700">
+                    <div id="turn-indicator-avatar" class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                        ?
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400">Torn de selecció</p>
+                        <p id="turn-indicator-name" class="font-bold text-slate-800 dark:text-white">Equip 1</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Controls (Restart / Finish early) -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="confirmResetToSetup()" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                        <span>Tornar a l'Inici</span>
+                    </button>
+                    <button onclick="confirmEndGame()" class="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-stop-circle"></i>
+                        <span>Finalitzar i Veure Podi</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- The Grid Container -->
+            <div class="bg-slate-900/10 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <div class="overflow-x-auto">
+                    <!-- Responsive Grid: Columns representing Categories -->
+                    <div class="grid grid-cols-5 gap-3 min-w-[700px]" id="jeopardy-grid">
+                        <!-- Headings (Categories) & buttons (point cells) rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TEAM SCORE BOARD (Interactive footer) -->
+            <div class="space-y-3">
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-2">
+                    <i class="fa-solid fa-star text-amber-500"></i>
+                    <span>Marcador General dels Equips (Modificable)</span>
+                </h3>
+                <div id="teams-scoreboard-row" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: RESULTS / PODIUM -->
+        <div id="screen-game-results" class="hidden space-y-6 text-center max-w-2xl mx-auto">
+            <div class="py-6 space-y-3">
+                <div class="inline-flex p-5 bg-amber-100 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 rounded-full text-5xl mb-1 animate-pulse">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white">Fi de la Partida!</h2>
+                <p class="text-slate-600 dark:text-slate-400 text-sm">
+                    El tauler de puntuacions s'ha completat. Felicitats a tots els equips per l'esforç!
+                </p>
+            </div>
+
+            <!-- Custom Podium Grid Representation -->
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6 animate-slide-up">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700">Podium de Classificació</h3>
+                
+                <!-- Graphical Podium Stand -->
+                <div id="podium-visual-stand" class="flex items-end justify-center space-x-4 max-w-md mx-auto py-8">
+                    <!-- Dynamic visual columns will be rendered here -->
+                </div>
+
+                <div id="podium-list-container" class="space-y-4 max-w-md mx-auto">
+                    <!-- List of teams ranked by points -->
+                </div>
+
+                <button onclick="resetAppToSetup()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-6 rounded-xl transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>Tornar a jugar un altre concurs</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- LOADING OVERLAY FOR AI GENERATION -->
+    <div id="loading-overlay" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center text-center p-4">
+        <div class="max-w-md space-y-6">
+            <div class="relative inline-flex">
+                <div class="w-24 h-24 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
+                <span class="absolute inset-0 flex items-center justify-center text-4xl animate-bounce">🪄</span>
+            </div>
+            <div class="space-y-2 text-white">
+                <h4 id="loading-title" class="text-2xl font-bold tracking-tight">Elaborant tauler de Jeopardy...</h4>
+                <p id="loading-desc" class="text-sm text-slate-300">La intel·ligència artificial de Gemini està generant 25 preguntes graduades per dificultat en català sobre el teu tema.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONFIRMATION DIALOG MODAL -->
+    <div id="modal-confirm" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl" id="confirm-modal-icon">⚠️</span>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white" id="confirm-modal-title">Confirmació</h3>
+            </div>
+            <p class="text-sm text-slate-600 dark:text-slate-300" id="confirm-modal-message">Estàs segur de realitzar aquesta acció?</p>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button id="btn-confirm-cancel" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold py-2 px-4 rounded-xl text-sm transition">
+                    Cancel·lar
+                </button>
+                <button id="btn-confirm-accept" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded-xl text-sm transition">
+                    Acceptar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTIVE QUESTION MODAL OVERLAY -->
+    <div id="modal-question" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-3xl shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700 flex flex-col animate-fade-in">
+            <!-- Timer Progress Bar -->
+            <div id="modal-timer-container" class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 hidden relative">
+                <div id="modal-timer-bar" class="bg-gradient-to-r from-brand-500 to-indigo-500 h-full w-full"></div>
+                <div class="absolute right-3 -top-6 text-xs font-extrabold text-slate-500 dark:text-slate-450 flex items-center space-x-1 bg-white/80 dark:bg-slate-800/80 px-2 py-0.5 rounded-full shadow-sm">
+                    <i class="fa-regular fa-clock"></i>
+                    <span id="modal-timer-seconds">30s</span>
+                </div>
+            </div>
+
+            <!-- Modal Header -->
+            <div id="modal-question-header" class="p-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-brand-50 dark:bg-brand-950/20 text-brand-800 dark:text-brand-200">
+                <div class="flex items-center space-x-3">
+                    <span id="modal-points-badge" class="px-3 py-1 bg-brand-600 text-white font-black text-sm rounded-lg shadow">200 Punts</span>
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Categoria</p>
+                        <h4 id="modal-category-name" class="font-extrabold text-sm md:text-base">Història de Catalunya</h4>
+                    </div>
+                </div>
+                <button onclick="closeQuestionModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                    <i class="fa-solid fa-xmark text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-6 md:p-8 space-y-5 flex-grow">
+                <!-- Enunciation of Question -->
+                <div class="text-center space-y-1 py-2">
+                    <p class="text-xs text-slate-400 uppercase tracking-wider font-bold">Enunciat de la pregunta</p>
+                    <h3 id="modal-question-text" class="text-xl md:text-2xl font-black text-slate-950 dark:text-white leading-relaxed">
+                        Quin any es va aprovar el primer Estatut d'Autonomia de Catalunya?
+                    </h3>
+                </div>
+
+                <!-- Team Wildcards Section in Modal (only shown if enabled) -->
+                <div id="modal-wildcards-row" class="hidden flex items-center justify-center space-x-3 py-2 border-y border-slate-100 dark:border-slate-700">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Comodins d'equip:</span>
+                    <button id="wildcard-btn-x2" onclick="toggleWildcard('x2')" class="px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center space-x-1.5 transition duration-150">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Duplicador (x2)</span>
+                    </button>
+                    <button id="wildcard-btn-shield" onclick="toggleWildcard('shield')" class="px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center space-x-1.5 transition duration-150">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>Escut (Bloqueja penalització)</span>
+                    </button>
+                </div>
+
+                <!-- Answer options -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="modal-options-container">
+                    <!-- Buttons with answers -->
+                </div>
+
+                <!-- Feedback area -->
+                <div id="modal-feedback" class="hidden rounded-xl p-4 flex items-center space-x-3 transition duration-150">
+                    <span class="text-3xl" id="modal-feedback-icon">🎉</span>
+                    <p id="modal-feedback-text" class="font-bold text-sm md:text-base"></p>
+                </div>
+            </div>
+
+            <!-- Modal Footer: Scoring and Team Actions -->
+            <div class="p-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <label for="assign-team-select" class="text-xs font-bold text-slate-400 uppercase">Assignar punts a:</label>
+                    <select id="assign-team-select" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500">
+                        <!-- List of teams -->
+                    </select>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button id="btn-assign-correct" onclick="submitAnswerResolution(true)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition flex items-center space-x-1">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Atorgar Punts</span>
+                    </button>
+                    <button id="btn-assign-incorrect" onclick="submitAnswerResolution(false)" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition flex items-center space-x-1">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                        <span>Resta Punts (Rebot)</span>
+                    </button>
+                    <button onclick="closeQuestionModal()" class="bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold text-xs py-2.5 px-4 rounded-xl transition">
+                        <span>Ometre / Tanca</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ERROR BANNER -->
+    <div id="error-banner" class="hidden fixed bottom-5 right-5 z-50 max-w-sm bg-rose-600 text-white px-5 py-4 rounded-xl shadow-2xl flex items-center space-x-3 transition-all">
+        <i class="fa-solid fa-circle-exclamation text-xl"></i>
+        <div>
+            <p class="font-bold">Error del Concurs</p>
+            <p id="error-banner-desc" class="text-xs text-slate-200">No s'ha pogut establir la connexió. Torna-ho a provar.</p>
+        </div>
+        <button onclick="document.getElementById('error-banner').classList.add('hidden')" class="hover:text-slate-200">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <!-- Footer - Llicenciat -->
+    <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-5 text-center text-xs text-slate-500 dark:text-slate-400 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 space-y-2">
+            <p class="font-bold text-slate-700 dark:text-slate-350">© David Cordones</p>
+            <p class="leading-relaxed flex flex-wrap items-center justify-center gap-1.5">
+                <span>Llicència del codi: <a href="LICENSE.txt" target="_blank" class="text-brand-600 dark:text-brand-400 hover:underline font-bold">AGPL v3</a></span>
+                <span>·</span>
+                <span class="flex items-center space-x-1.5">
+                    <span>Contingut: <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" class="text-brand-600 dark:text-brand-400 hover:underline font-bold">CC BY-SA 4.0</a> (Aquesta obra està sota llicència <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" class="hover:underline font-bold">CC BY-SA 4.0</a>)</span>
+                    <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" class="inline-block align-middle">
+                        <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/svg/by-sa.svg" alt="CC BY-SA 4.0" class="h-4.5" />
+                    </a>
+                </span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- SETTINGS MODAL -->
+    <div id="modal-settings" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh] animate-fade-in">
+            <!-- Header -->
+            <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-t-2xl">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-gear text-slate-500"></i>
+                    <span>Configuració del Concurs</span>
+                </h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <!-- Body -->
+            <div class="p-6 space-y-4 overflow-y-auto flex-grow text-left">
+                <!-- API Key Section -->
+                <div class="space-y-2">
+                    <label for="settings-api-key" class="block text-xs font-bold text-slate-500 uppercase">Clau API de Gemini (AI)</label>
+                    <input type="password" id="settings-api-key" placeholder="AIzaSy..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                    
+                    <!-- Guide Box to get API Key -->
+                    <div class="bg-slate-100 dark:bg-slate-900/60 rounded-xl p-3 border border-slate-200 dark:border-slate-750 space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+                        <p class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center space-x-1">
+                            <i class="fa-solid fa-circle-question text-brand-500"></i>
+                            <span>Com aconseguir una API Key gratuïta en 1 minut:</span>
+                        </p>
+                        <ol class="list-decimal list-inside space-y-1 pl-1 text-[11px] leading-relaxed">
+                            <li>Fes clic per obrir <a href="https://aistudio.google.com/" target="_blank" class="text-brand-500 dark:text-brand-400 underline font-semibold">Google AI Studio</a>.</li>
+                            <li>Inicia sessió amb qualsevol compte personal o professional de Google (Gmail).</li>
+                            <li>Prem el botó blau <strong>"Get API key"</strong> (es troba a dalt a la cantonada esquerra).</li>
+                            <li>Fes clic a <strong>"Create API key"</strong>, copia el codi llarg generat (comença per <code>AIzaSy</code>) i enganxa'l aquí a dalt.</li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <!-- Model Section -->
+                <div class="space-y-1">
+                    <label for="settings-model" class="block text-xs font-bold text-slate-500 uppercase">Model de IA</label>
+                    <select id="settings-model" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="gemini-2.5-flash">Gemini 2.5 Flash (Ràpid i intel·ligent - Recomanat)</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (Màxima compatibilitat)</option>
+                    </select>
+                </div>
+
+                <hr class="border-slate-100 dark:border-slate-700 my-2">
+
+                <!-- Audio Settings -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200">Efectes de So</h4>
+                        <p class="text-[10px] text-slate-400">Sintetitza sons de celebració, error i cronòmetre en joc.</p>
+                    </div>
+                    <button id="settings-sound-toggle" onclick="toggleMute()" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs flex items-center space-x-1.5 transition cursor-pointer">
+                        <i id="settings-sound-icon" class="fa-solid fa-volume-high"></i>
+                        <span id="settings-sound-text">Activat</span>
+                    </button>
+                </div>
+
+                <hr class="border-slate-100 dark:border-slate-700 my-2">
+
+                <!-- Game Rules Settings -->
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Normes del Joc per Defecte</h4>
+                
+                <!-- Timer duration -->
+                <div class="space-y-1 mb-3">
+                    <label for="settings-timer" class="block text-xs font-semibold text-slate-500">Temps límit de resposta</label>
+                    <select id="settings-timer" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="0">Sense temps limit</option>
+                        <option value="15">15 segons (Molt ràpid)</option>
+                        <option value="30" selected>30 segons (Recomanat)</option>
+                        <option value="45">45 segons</option>
+                        <option value="60">60 segons</option>
+                    </select>
+                </div>
+
+                <!-- Penalty type -->
+                <div class="space-y-1 mb-4">
+                    <label for="settings-penalty" class="block text-xs font-semibold text-slate-500">Penalització per resposta incorrecta</label>
+                    <select id="settings-penalty" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="none">Sense penalització (0 punts)</option>
+                        <option value="half" selected>Resta el 50% del valor (Rebot clàssic)</option>
+                        <option value="full">Resta el 100% del valor</option>
+                    </select>
+                </div>
+
+                <!-- Daily double toggle -->
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Preguntes Especials (Daily Double)</h4>
+                        <p class="text-[10px] text-slate-400">Amaga 2 caselles aleatòries al tauler que valen el doble de punts.</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="settings-special" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+
+                <!-- Wildcards toggle -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Comodins d'Equip</h4>
+                        <p class="text-[10px] text-slate-400">Atorga a cada equip un comodí 'x2' i un comodí 'Escut' per a tota la partida.</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="settings-wildcards" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div class="p-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-end rounded-b-2xl">
+                <button onclick="saveSettings()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition cursor-pointer">
+                    Desar Configuració
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DAILY DOUBLE OVERLAY -->
+    <div id="modal-special-banner" class="hidden fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="text-center space-y-6 max-w-lg p-8 rounded-3xl bg-gradient-to-br from-amber-500 via-yellow-400 to-orange-500 shadow-2xl border-4 border-yellow-300 transform transition-all duration-305 animate-fade-in">
+            <div class="text-6xl animate-bounce">🌟</div>
+            <h2 class="text-4xl font-extrabold text-white tracking-tight drop-shadow-md">PREGUNTA ESPECIAL!</h2>
+            <div class="bg-white/20 backdrop-blur-sm rounded-2xl p-4 border border-white/30 text-left">
+                <p class="text-base text-white font-bold">L'equip <span id="special-team-name" class="underline font-black text-yellow-100"></span> té una gran oportunitat!</p>
+                <p class="text-xs text-yellow-50 mt-1">Aquest panell conté una casella especial. Els punts d'aquesta pregunta es DUPLIQUEN automàticament!</p>
+            </div>
+            <div class="text-4xl font-black text-white drop-shadow">
+                <span id="special-old-points" class="line-through text-orange-200 text-2xl">100</span>
+                <i class="fa-solid fa-arrow-right text-yellow-300 text-2xl mx-2"></i>
+                <span id="special-new-points" class="text-yellow-250 font-black">200</span> Punts
+            </div>
+            <button id="btn-start-special" class="w-full bg-white hover:bg-yellow-50 text-orange-600 font-black py-4 px-6 rounded-2xl shadow-xl transition transform active:scale-98 flex items-center justify-center space-x-2 cursor-pointer">
+                <i class="fa-solid fa-play"></i>
+                <span>Comença a respondre!</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- CONFETTI CANVAS -->
+    <canvas id="confetti-canvas" class="pointer-events-none fixed inset-0 z-45 hidden"></canvas>
+
+    <!-- Core Jeopardy Logic -->
+    <script>
+        const STANDARD_BOARDS = {
+            science: {
+                name: "Ciència i Natura",
+                questions: [
+                    { value: 100, text: "Quin element és indispensable per respirar i té el símbol quimic 'O'?", correct: "Oxigen", wrong: ["Hidrogen", "Carboni", "Helium"], explanation: "L'oxigen (O) és vital per a la respiració cel·lular de la majoria dels éssers vius i representa prop del 21% de l'atmosfera." },
+                    { value: 200, text: "Quin planeta és popularment conegut com el 'Planeta Vermell'?", correct: "Mart", wrong: ["Venus", "Saturn", "Mercuri"], explanation: "Mart rep aquest nom pel seu color vermellós, causat per l'abundància d'òxid de ferro a la seva superfície." },
+                    { value: 300, text: "Com s'anomena la força que ens atreu cap al centre de la Terra?", correct: "Gravetat", wrong: ["Magnetisme", "Inèrcia", "Fricció"], explanation: "La gravetat és la força d'atracció mútua entre masses. Va ser descrita científicament per Isaac Newton i Albert Einstein." },
+                    { value: 400, text: "Quin gas és el más abundant de toda l'atmosfera terrestre?", correct: "Nitrogen", wrong: ["Oxigen", "Diòxid de Carboni", "Ozó"], explanation: "El nitrogen representa gairebé el 78% de l'atmosfera de la Terra, mentre que l'oxigen és el 21%." },
+                    { value: 500, text: "Com es diu la molècula que transporta el nostre codi d'herència genètica?", correct: "ADN", wrong: ["ARN", "Proteïna", "Enzim"], explanation: "L'àcid desoxiribonucleic (ADN) conté les instruccions genètiques utilitzades en el desenvolupament i funcionament de tots els organismes vius." }
+                ]
+            },
+            history: {
+                name: "Història Universal",
+                questions: [
+                    { value: 100, text: "Quina antiga civilització va construir les grans Piràmides de Guiza?", correct: "Egípcia", wrong: ["Romana", "Grega", "Mesopotàmica"], explanation: "Les piràmides d'Egipte es van construir com a tombes monumentals per als faraons durant l'Imperi Antic." },
+                    { value: 200, text: "En quin any va arribar Cristòfor Colom per primera vegada a Amèrica?", correct: "1492", wrong: ["1504", "1392", "1412"], explanation: "Colom va arribar a l'illa de Guanahaní (Bahames) el 12 d'octubre de 1492, buscant obrir una nova ruta comercial cap a les Índies." },
+                    { value: 300, text: "Quin famós imperi va ser dominat per personatges com Juli Cèsar?", correct: "Imperi Romà", wrong: ["Imperi Grec", "Imperi Mongol", "Imperi Persa"], explanation: "Juli Cèsar va ser un dels líders militars i polítics més influents de la història de la República Romana, propiciant el naixement de l'Imperi." },
+                    { value: 400, text: "En quin any va esclatar la famosa Primera Guerra Mundial?", correct: "1914", wrong: ["1918", "1939", "1898"], explanation: "La Primera Guerra Mundial va començar a Europa el 28 de juliol de 1914 després de l'assassinat de l'arxiduc Francesc Ferran d'Àustria." },
+                    { value: 500, text: "Qui va ser conegut històricament com el 'Rei Sol' a França?", correct: "Lluís XIV", wrong: ["Lluís XVI", "Napoleó Bonaparte", "Carlemany"], explanation: "Lluís XIV de França es comparava amb el Sol per simbolitzar el seu paper central i el seu poder absolut en un imperi absolutista." }
+                ]
+            },
+            geography: {
+                name: "Geografia de la Terra",
+                questions: [
+                    { value: 100, text: "Quina és la capital estatal del Japó?", correct: "Tòquio", wrong: ["Pequín", "Seül", "Kyoto"], explanation: "Tòquio és la capital del Japó, a més de la zona metropolitana més poblada del món, superant els 37 milions d'habitants." },
+                    { value: 200, text: "Quin és l'oceà més gran de tot el nostre planeta?", correct: "Oceà Pacífic", wrong: ["Oceà Atlàntic", "Oceà Índic", "Oceà Àrtic"], explanation: "L'oceà Pacífic ocupa una tercera part de la superfície de la Terra, sent més gran que tota la terra ferma junta." },
+                    { value: 300, text: "Quin és el riu oficialment considerat el més llarg del món?", correct: "Amazones", wrong: ["Nil", "Mississipí", "Danubi"], explanation: "L'Amazones és el riu més llarg i amb diferència el més cabalós del món, circulant pel nord de l'Amèrica del Sud." },
+                    { value: 400, text: "Quin estret separa el sud d'Europa del nord d'Àfrica?", correct: "Estret de Gibraltar", wrong: ["Estret de Bering", "Estret de Bòsfor", "Estret de Magallanes"], explanation: "L'estret de Gibraltar té només uns 14 quilòmetres d'amplada en el seu punt més estret entre Espanya i el Marroc." },
+                    { value: 500, text: "Quin és el país amb la major longitud de costa de tot el món?", correct: "Canadà", wrong: ["Austràlia", "Rússia", "Indonèsia"], explanation: "Canadà té més de 202.080 quilòmetres de línia de costa, el triple que qualsevol altre país." }
+                ]
+            },
+            sports: {
+                name: "Esports i Jocs",
+                questions: [
+                    { value: 100, text: "Cada quants anys tenen lloc els clàssics Jocs Olímpics d'estiu?", correct: "4 anys", wrong: ["2 anys", "5 anys", "3 anys"], explanation: "Els Jocs Olímpics se celebren cada 4 anys, recuperant la tradició dels Jocs Olímpics de la Grècia antiga." },
+                    { value: 200, text: "Quin país s'atribueix històricament la invenció del futbol modern?", correct: "Anglaterra", wrong: ["Brasil", "França", "Itàlia"], explanation: "El futbol modern va néixer formalment a Anglaterra l'anno 1863 amb la fundació de la Football Association (FA)." },
+                    { value: 300, text: "Quina és la distància oficial de la dura cursa de Marató?", correct: "42,195 km", wrong: ["40 km", "42 km", "45,5 km"], explanation: "La distància oficial s'estableix en 42,195 km, distància fixada als Jocs Olímpics de Londres de 1908 per anar del castell de Windsor al recinte olímpic." },
+                    { value: 400, text: "Quin esportista ha aconseguit més medalles de la història olímpica?", correct: "Michael Phelps", wrong: ["Usain Bolt", "Carl Lewis", "Mark Spitz"], explanation: "El nedador Michael Phelps ha guanyat 28 medalles olímpiques en total, 23 de les quals són d'or, un rècord absolut." },
+                    { value: 500, text: "En quin tipus d'esport és coneguda la jugada del 'Home Run'?", correct: "Beisbol", wrong: ["Criquet", "Rugbi", "Bàsquet"], explanation: "Un 'Home Run' es produeix quan el batedor colpeja la pilota fora del camp regulat, fent que ell i els corredors a bases puguin anotar directament." }
+                ]
+            },
+            pop: {
+                name: "Cultura i Espectacles",
+                questions: [
+                    { value: 100, text: "Com es diu el superheroi que amaga la identitat secreta de Bruce Wayne?", correct: "Batman", wrong: ["Superman", "Spider-Man", "Iron Man"], explanation: "Bruce Wayne és el multimilionari de Gotham que assumeix la identitat de Batman a les historietes de DC Comics." },
+                    { value: 200, text: "Quin famós grup britànic va compondre la llegendària cançó 'Hey Jude'?", correct: "The Beatles", wrong: ["The Rolling Stones", "Queen", "Led Zeppelin"], explanation: "Hey Jude va ser llançada l'any 1968, escrita per Paul McCartney per consolar a Julian Lennon durant el divorci dels seus pares." },
+                    { value: 300, text: "Qui va dirigir la coneguda pel·lícula d'aventures 'Jurassic Park'?", correct: "Steven Spielberg", wrong: ["James Cameron", "George Lucas", "Ridley Scott"], explanation: "El cèlebre Steven Spielberg va dirigir aquest film que va revolucionar els efectes digitals i el cinema de ciència-ficció l'any 1993." },
+                    { value: 400, text: "Quantes estatuetes dels Oscars va guanyar la mítica pel·lícula 'Titanic'?", correct: "11", wrong: ["10", "12", "9"], explanation: "Titanic va guanyar 11 premis de l'Acadèmia el 1998, igualant el rècord històric que tenien Ben-Hur i posteriorment El Senyor dels Anells." },
+                    { value: 500, text: "Com s'anomena l'escola de màgia de la saga cinematogràfica de Harry Potter?", correct: "Hogwarts", wrong: ["Beauxbatons", "Durmstrang", "Nurmengard"], explanation: "Hogwarts és l'escola britànica de màgia i bruixeria on Harry, Hermione i Ron estudien durant gairebé tota la saga literària i cinematogràfica." }
+                ]
+            }
+        };
+
+        // --- GAME CONFIG & SETTINGS ---
+        let gameSettings = {
+            apiKey: "",
+            model: "gemini-2.5-flash",
+            soundEnabled: true,
+            timerDuration: 30,
+            penaltyMode: "half",
+            specialQuestions: true,
+            wildcards: true
+        };
+
+        // --- GAME STATES ---
+        let teams = [];
+        let activeTeamIdx = 0;
+        let jeopardyBoard = {}; // Structure: { category_id: { name: "...", questions: [...] } }
+        let playedCells = {}; // Keeps track of "CategoryName-Value" played state
+        let currentActiveQuestion = null;
+        let currentActiveCategoryName = "";
+        let currentActiveValue = 0;
+        let activeSetupTab = 'standard';
+        let confirmResolve = null;
+        let isVirtualFullscreen = false;
+        
+        let specialCells = []; // Track random double points questions
+        let activeWildcard = null; // Track selected wildcard: 'x2', 'shield' or null
+        let timerInterval = null;
+        let timeLeft = 0;
+
+        // --- SOUND EFFECTS (Web Audio API Synthesizer) ---
+        const SoundEffects = {
+            ctx: null,
+            muted: false,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            play(type) {
+                if (this.muted) return;
+                try {
+                    this.init();
+                    if (this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                    const now = this.ctx.currentTime;
+                    
+                    switch (type) {
+                        case 'correct':
+                            this.beep(523.25, 0.15, 'sine', now, 0.2); // C5
+                            this.beep(659.25, 0.25, 'sine', now + 0.12, 0.2); // E5
+                            break;
+                        case 'incorrect':
+                            this.beep(220, 0.2, 'triangle', now, 0.25); // A3
+                            this.beep(147, 0.35, 'triangle', now + 0.15, 0.25); // D3
+                            break;
+                        case 'dailyDouble':
+                            this.beep(392, 0.1, 'sawtooth', now, 0.15); // G4
+                            this.beep(523.25, 0.1, 'sawtooth', now + 0.1, 0.15); // C5
+                            this.beep(659.25, 0.1, 'sawtooth', now + 0.2, 0.15); // E5
+                            this.beep(784, 0.3, 'sawtooth', now + 0.3, 0.15); // G5
+                            break;
+                        case 'tick':
+                            this.beep(880, 0.05, 'sine', now, 0.1); // Short high tick
+                            break;
+                        case 'timeout':
+                            this.beep(180, 0.5, 'sawtooth', now, 0.2); // Alarm tone
+                            break;
+                        case 'applause':
+                            this.beep(261.63, 0.1, 'sine', now, 0.2); // C4
+                            this.beep(329.63, 0.1, 'sine', now + 0.1, 0.2); // E4
+                            this.beep(392.00, 0.1, 'sine', now + 0.2, 0.2); // G4
+                            this.beep(523.25, 0.4, 'sine', now + 0.3, 0.3); // C5
+                            break;
+                    }
+                } catch (e) {
+                    console.warn("Error playing audio effect:", e);
+                }
+            },
+            beep(freq, duration, type = 'sine', startTime = null, volume = 0.3) {
+                const osc = this.ctx.createOscillator();
+                const gainNode = this.ctx.createGain();
+                
+                osc.type = type;
+                osc.frequency.value = freq;
+                
+                gainNode.gain.setValueAtTime(volume, startTime || this.ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, (startTime || this.ctx.currentTime) + duration);
+                
+                osc.connect(gainNode);
+                gainNode.connect(this.ctx.destination);
+                
+                osc.start(startTime || this.ctx.currentTime);
+                osc.stop((startTime || this.ctx.currentTime) + duration);
+            }
+        };
+
+        // --- LOCAL STORAGE SETTINGS MANAGEMENT ---
+        function loadSettingsFromStorage() {
+            const savedKey = localStorage.getItem('qui_sap_que_gemini_key');
+            if (savedKey) gameSettings.apiKey = savedKey;
+
+            const savedModel = localStorage.getItem('qui_sap_que_model');
+            if (savedModel) gameSettings.model = savedModel;
+
+            const savedSound = localStorage.getItem('qui_sap_que_sound');
+            if (savedSound !== null) gameSettings.soundEnabled = savedSound === 'true';
+
+            const savedTimer = localStorage.getItem('qui_sap_que_timer');
+            if (savedTimer !== null) gameSettings.timerDuration = parseInt(savedTimer, 10);
+
+            const savedPenalty = localStorage.getItem('qui_sap_que_penalty');
+            if (savedPenalty) gameSettings.penaltyMode = savedPenalty;
+
+            const savedSpecial = localStorage.getItem('qui_sap_que_special');
+            if (savedSpecial !== null) gameSettings.specialQuestions = savedSpecial === 'true';
+
+            const savedWildcards = localStorage.getItem('qui_sap_que_wildcards');
+            if (savedWildcards !== null) gameSettings.wildcards = savedWildcards === 'true';
+            
+            // Sync settings UI fields
+            document.getElementById('settings-api-key').value = gameSettings.apiKey;
+            document.getElementById('settings-model').value = gameSettings.model;
+            document.getElementById('settings-timer').value = gameSettings.timerDuration;
+            document.getElementById('settings-penalty').value = gameSettings.penaltyMode;
+            document.getElementById('settings-special').checked = gameSettings.specialQuestions;
+            document.getElementById('settings-wildcards').checked = gameSettings.wildcards;
+
+            SoundEffects.muted = !gameSettings.soundEnabled;
+            updateSoundUI();
+        }
+
+        function saveSettings() {
+            gameSettings.apiKey = document.getElementById('settings-api-key').value.trim();
+            gameSettings.model = document.getElementById('settings-model').value;
+            gameSettings.timerDuration = parseInt(document.getElementById('settings-timer').value, 10);
+            gameSettings.penaltyMode = document.getElementById('settings-penalty').value;
+            gameSettings.specialQuestions = document.getElementById('settings-special').checked;
+            gameSettings.wildcards = document.getElementById('settings-wildcards').checked;
+
+            localStorage.setItem('qui_sap_que_gemini_key', gameSettings.apiKey);
+            localStorage.setItem('qui_sap_que_model', gameSettings.model);
+            localStorage.setItem('qui_sap_que_timer', gameSettings.timerDuration);
+            localStorage.setItem('qui_sap_que_penalty', gameSettings.penaltyMode);
+            localStorage.setItem('qui_sap_que_special', gameSettings.specialQuestions);
+            localStorage.setItem('qui_sap_que_wildcards', gameSettings.wildcards);
+
+            SoundEffects.muted = !gameSettings.soundEnabled;
+            closeSettingsModal();
+            updateSoundUI();
+            renderTeamsSetup();
+            
+            // Refresh API Key warning alert in setup view if active
+            const warning = document.getElementById('ai-key-warning');
+            if (warning) {
+                if (!getApiKey()) {
+                    warning.classList.remove('hidden');
+                } else {
+                    warning.classList.add('hidden');
+                }
+            }
+        }
+
+        function toggleMute() {
+            gameSettings.soundEnabled = !gameSettings.soundEnabled;
+            SoundEffects.muted = !gameSettings.soundEnabled;
+            localStorage.setItem('qui_sap_que_sound', gameSettings.soundEnabled);
+            updateSoundUI();
+            
+            // Test beep
+            if (gameSettings.soundEnabled) {
+                SoundEffects.play('tick');
+            }
+        }
+        
+        function updateSoundUI() {
+            const btnText = document.getElementById('settings-sound-text');
+            const btnIcon = document.getElementById('settings-sound-icon');
+            if (btnText && btnIcon) {
+                if (gameSettings.soundEnabled) {
+                    btnText.textContent = "Activat";
+                    btnIcon.className = "fa-solid fa-volume-high";
+                } else {
+                    btnText.textContent = "Silenciat";
+                    btnIcon.className = "fa-solid fa-volume-xmark";
+                }
+            }
+
+            const headerIcon = document.getElementById('header-sound-icon');
+            if (headerIcon) {
+                headerIcon.className = gameSettings.soundEnabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark";
+            }
+        }
+
+        function openSettingsModal() {
+            document.getElementById('modal-settings').classList.remove('hidden');
+        }
+        function closeSettingsModal() {
+            document.getElementById('modal-settings').classList.add('hidden');
+        }
+
+        function getApiKey() {
+            return gameSettings.apiKey || "";
+        }
+
+        // --- INITIAL SETUP (ONLOAD) ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            setupInitialTeams();
+            setupConfirmEventListeners();
+            setupFullscreen();
+            loadSettingsFromStorage();
+            
+            // Register settings events
+            document.getElementById('settings-toggle').addEventListener('click', openSettingsModal);
+            
+            // Register change event on modal team select to update wildcards
+            document.getElementById('assign-team-select').addEventListener('change', () => {
+                activeWildcard = null;
+                updateWildcardsRowForTeam();
+            });
+        });
+
+        // --- THEME HANDLER ---
+        function initTheme() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        });
+
+        // --- FULLSCREEN SYSTEM ---
+        function setupFullscreen() {
+            const toggleBtn = document.getElementById('fullscreen-toggle');
+            toggleBtn.addEventListener('click', () => {
+                toggleFullscreen();
+            });
+
+            // Sync icon on escape or native changes
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
+            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+        }
+
+        function handleFullscreenChange() {
+            const icon = document.getElementById('fullscreen-icon');
+            const isNativeFS = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+            
+            if (isNativeFS) {
+                icon.className = "fa-solid fa-compress";
+            } else {
+                icon.className = "fa-solid fa-expand";
+                // If native exited but virtual is still flagged, clean it up
+                if (isVirtualFullscreen) {
+                    toggleVirtualFullscreen(false);
+                }
+            }
+        }
+
+        function toggleFullscreen() {
+            const docEl = document.documentElement;
+            const isCurrentlyFS = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+
+            if (!isCurrentlyFS && !isVirtualFullscreen) {
+                // Try Native HTML5 Fullscreen first
+                let requestMethod = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+                
+                if (requestMethod) {
+                    requestMethod.call(docEl).catch(err => {
+                        console.warn("Pantalla completa nativa previnguda per les regles de seguretat de l'iframe. Activant la pantalla completa virtual interna (CSS)...", err);
+                        toggleVirtualFullscreen(true);
+                    });
+                } else {
+                    toggleVirtualFullscreen(true);
+                }
+            } else {
+                // Exit Fullscreen
+                let exitMethod = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+                if (exitMethod && isCurrentlyFS) {
+                    exitMethod.call(document);
+                }
+                toggleVirtualFullscreen(false);
+            }
+        }
+
+        function toggleVirtualFullscreen(active) {
+            isVirtualFullscreen = active;
+            const body = document.body;
+            const icon = document.getElementById('fullscreen-icon');
+            
+            if (active) {
+                body.classList.add('fixed', 'inset-0', 'z-50', 'w-screen', 'h-screen', 'overflow-y-auto');
+                icon.className = "fa-solid fa-compress";
+            } else {
+                body.classList.remove('fixed', 'inset-0', 'z-50', 'w-screen', 'h-screen', 'overflow-y-auto');
+                icon.className = "fa-solid fa-expand";
+            }
+        }
+
+        // --- CUSTOM CONFIRMATION MODAL SYSTEM ---
+        function setupConfirmEventListeners() {
+            document.getElementById('btn-confirm-cancel').onclick = () => handleConfirmChoice(false);
+            document.getElementById('btn-confirm-accept').onclick = () => handleConfirmChoice(true);
+        }
+
+        function showCustomConfirm(title, message, icon = "⚠️", acceptText = "Acceptar", isDanger = true) {
+            document.getElementById('confirm-modal-title').textContent = title;
+            document.getElementById('confirm-modal-message').textContent = message;
+            document.getElementById('confirm-modal-icon').textContent = icon;
+            
+            const acceptBtn = document.getElementById('btn-confirm-accept');
+            acceptBtn.textContent = acceptText;
+            if (isDanger) {
+                acceptBtn.className = "bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded-xl text-sm transition";
+            } else {
+                acceptBtn.className = "bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded-xl text-sm transition";
+            }
+            
+            document.getElementById('modal-confirm').classList.remove('hidden');
+            
+            return new Promise((resolve) => {
+                confirmResolve = resolve;
+            });
+        }
+
+        function handleConfirmChoice(choice) {
+            document.getElementById('modal-confirm').classList.add('hidden');
+            if (confirmResolve) {
+                confirmResolve(choice);
+                confirmResolve = null;
+            }
+        }
+
+        // --- TEAMS CONFIGURATION SYSTEM ---
+        const DEFAULT_TEAM_NAMES = ["Equip Blau", "Equip Vermell", "Equip Verd", "Equip Groc", "Equip Taronja"];
+        const TEAM_BG_COLORS = [
+            "bg-blue-600 dark:bg-blue-700",
+            "bg-red-600 dark:bg-red-700",
+            "bg-emerald-600 dark:bg-emerald-700",
+            "bg-amber-500 dark:bg-amber-600",
+            "bg-orange-600 dark:bg-orange-700"
+        ];
+        const TEAM_BORDER_COLORS = [
+            "border-blue-300 dark:border-blue-900",
+            "border-red-300 dark:border-red-900",
+            "border-emerald-300 dark:border-emerald-900",
+            "border-amber-300 dark:border-amber-800",
+            "border-orange-300 dark:border-orange-900"
+        ];
+        const TEAM_TEXT_COLORS = [
+            "text-blue-600 dark:text-blue-400",
+            "text-red-600 dark:text-red-400",
+            "text-emerald-600 dark:text-emerald-400",
+            "text-amber-600 dark:text-amber-400",
+            "text-orange-600 dark:text-orange-400"
+        ];
+
+        function setupInitialTeams() {
+            teams = [
+                { id: "team-1", name: "Equip Blau", score: 0, bg: TEAM_BG_COLORS[0], border: TEAM_BORDER_COLORS[0], text: TEAM_TEXT_COLORS[0] },
+                { id: "team-2", name: "Equip Vermell", score: 0, bg: TEAM_BG_COLORS[1], border: TEAM_BORDER_COLORS[1], text: TEAM_TEXT_COLORS[1] },
+                { id: "team-3", name: "Equip Verd", score: 0, bg: TEAM_BG_COLORS[2], border: TEAM_BORDER_COLORS[2], text: TEAM_TEXT_COLORS[2] }
+            ];
+            renderTeamsSetup();
+        }
+
+        function renderTeamsSetup() {
+            const container = document.getElementById('teams-setup-container');
+            container.innerHTML = '';
+
+            teams.forEach((team, index) => {
+                const item = document.createElement('div');
+                item.className = "flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-850";
+                item.innerHTML = `
+                    <div class="w-8 h-8 rounded-full ${team.bg} flex items-center justify-center text-white font-bold text-xs">
+                        ${index + 1}
+                    </div>
+                    <input type="text" value="${team.name}" onchange="updateTeamName('${team.id}', this.value)" 
+                        class="flex-grow bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500">
+                    ${teams.length > 2 ? `
+                        <button onclick="removeTeam('${team.id}')" class="text-rose-500 hover:text-rose-700 p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    ` : ''}
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function addTeam() {
+            if (teams.length >= 5) {
+                showError("El límit màxim permès és de 5 equips participants.");
+                return;
+            }
+            const newIndex = teams.length;
+            const newId = `team-${Date.now()}`;
+            teams.push({
+                id: newId,
+                name: DEFAULT_TEAM_NAMES[newIndex] || `Equip ${newIndex + 1}`,
+                score: 0,
+                bg: TEAM_BG_COLORS[newIndex] || "bg-slate-600",
+                border: TEAM_BORDER_COLORS[newIndex] || "border-slate-300",
+                text: TEAM_TEXT_COLORS[newIndex] || "text-slate-600"
+            });
+            renderTeamsSetup();
+        }
+
+        function removeTeam(id) {
+            if (teams.length <= 2) return;
+            teams = teams.filter(t => t.id !== id);
+            // Re-assign systematic colors based on new indexing
+            teams.forEach((t, i) => {
+                t.bg = TEAM_BG_COLORS[i] || "bg-slate-600";
+                t.border = TEAM_BORDER_COLORS[i] || "border-slate-300";
+                t.text = TEAM_TEXT_COLORS[i] || "text-slate-600";
+            });
+            renderTeamsSetup();
+        }
+
+        function updateTeamName(id, val) {
+            const team = teams.find(t => t.id === id);
+            if (team && val.trim()) {
+                team.name = val.trim();
+            }
+        }
+
+        // --- TAB SWITCHER IN SETUP ---
+        function switchSetupTab(tab) {
+            activeSetupTab = tab;
+            const tabStd = document.getElementById('tab-standard');
+            const tabAI = document.getElementById('tab-ai');
+            const panelStd = document.getElementById('panel-setup-standard');
+            const panelAI = document.getElementById('panel-setup-ai');
+
+            if (tab === 'standard') {
+                tabStd.className = "flex-1 py-3 text-center border-b-2 border-brand-600 text-brand-600 dark:text-brand-400 font-bold text-sm flex items-center justify-center space-x-2";
+                tabAI.className = "flex-1 py-3 text-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-semibold text-sm flex items-center justify-center space-x-2";
+                panelStd.classList.remove('hidden');
+                panelAI.classList.add('hidden');
+            } else {
+                tabStd.className = "flex-1 py-3 text-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-semibold text-sm flex items-center justify-center space-x-2";
+                tabAI.className = "flex-1 py-3 text-center border-b-2 border-brand-600 text-brand-600 dark:text-brand-400 font-bold text-sm flex items-center justify-center space-x-2";
+                panelStd.classList.add('hidden');
+                panelAI.classList.remove('hidden');
+            }
+        }
+
+        // --- RANDOM SPECIAL CELLS (DAILY DOUBLE) GENERATOR ---
+        function setupSpecialCells() {
+            specialCells = [];
+            if (!gameSettings.specialQuestions) return;
+            
+            const keys = Object.keys(jeopardyBoard); // Usually 5 categories
+            const pointRows = [100, 200, 300, 400, 500];
+            const totalCells = keys.length * pointRows.length;
+            
+            if (totalCells <= 2) return;
+
+            // Choose 2 random indices
+            const idx1 = Math.floor(Math.random() * totalCells);
+            let idx2 = Math.floor(Math.random() * totalCells);
+            while (idx2 === idx1) {
+                idx2 = Math.floor(Math.random() * totalCells);
+            }
+            
+            // Map indexes back to CategoryName-Points
+            const cat1Key = keys[Math.floor(idx1 / 5)];
+            const cat1Pts = pointRows[idx1 % 5];
+            specialCells.push(`${jeopardyBoard[cat1Key].name}-${cat1Pts}`);
+            
+            const cat2Key = keys[Math.floor(idx2 / 5)];
+            const cat2Pts = pointRows[idx2 % 5];
+            specialCells.push(`${jeopardyBoard[cat2Key].name}-${cat2Pts}`);
+        }
+
+        // --- RUNNING STANDARD GAME ---
+        function startStandardJeopardy() {
+            jeopardyBoard = JSON.parse(JSON.stringify(STANDARD_BOARDS));
+            playedCells = {};
+            activeTeamIdx = 0;
+            
+            // Set scores to zero and reset wildcards
+            teams.forEach(t => {
+                t.score = 0;
+                t.wildcards = { x2: true, shield: true };
+            });
+
+            setupSpecialCells();
+
+            document.getElementById('board-topic-title').textContent = "Concurs General de Coneixements";
+            launchJeopardyBoard();
+        }
+
+        // --- LAUNCHING BOARD VIEW ---
+        function launchJeopardyBoard() {
+            document.getElementById('screen-setup').classList.add('hidden');
+            document.getElementById('screen-game-board').classList.remove('hidden');
+
+            renderJeopardyGrid();
+            updateTeamTurnIndicator();
+            renderTeamsScoreboards();
+            populateScoringSelects();
+        }
+
+        // --- RENDER THE JEOPARDY BOARD GRID ---
+        function renderJeopardyGrid() {
+            const gridContainer = document.getElementById('jeopardy-grid');
+            gridContainer.innerHTML = '';
+
+            const keys = Object.keys(jeopardyBoard); // Science, history, etc.
+
+            // 1. Render Headers (Category Names)
+            keys.forEach(key => {
+                const header = document.createElement('div');
+                header.className = "bg-indigo-600 text-white rounded-xl p-3 text-center shadow font-black text-xs md:text-sm tracking-wide uppercase min-h-[50px] flex items-center justify-center border border-indigo-500";
+                header.textContent = jeopardyBoard[key].name;
+                gridContainer.appendChild(header);
+            });
+
+            // 2. Render Point Buttons row by row (100, 200, 300, 400, 500)
+            const pointRows = [100, 200, 300, 400, 500];
+
+            pointRows.forEach(points => {
+                keys.forEach(key => {
+                    const category = jeopardyBoard[key];
+                    const qObj = category.questions.find(q => q.value === points) || category.questions[pointRows.indexOf(points)];
+                    
+                    const cellKey = `${category.name}-${points}`;
+                    const isPlayed = playedCells[cellKey] === true;
+
+                    const cellBtn = document.createElement('button');
+                    if (isPlayed) {
+                        cellBtn.className = "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-650 rounded-xl py-6 text-center font-bold text-lg md:text-xl border border-slate-300 dark:border-slate-800/60 cursor-not-allowed opacity-50";
+                        cellBtn.innerHTML = `<i class="fa-solid fa-check"></i>`;
+                        cellBtn.disabled = true;
+                    } else {
+                        cellBtn.className = "bg-white dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950/20 text-brand-600 dark:text-brand-300 rounded-xl py-5 text-center font-black text-xl md:text-2xl shadow border border-slate-200 dark:border-slate-700 hover:border-brand-500 hover:scale-102 transform transition-all duration-150 active:scale-98 outline-none cursor-pointer";
+                        cellBtn.textContent = points;
+                        cellBtn.onclick = () => openQuestion(category.name, points, qObj);
+                    }
+                    gridContainer.appendChild(cellBtn);
+                });
+            });
+        }
+
+        // --- UPDATE TURN INDICATOR UI ---
+        function updateTeamTurnIndicator() {
+            const currentTeam = teams[activeTeamIdx];
+            
+            const badge = document.getElementById('active-turn-indicator');
+            badge.className = `px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-sm ${currentTeam.bg}`;
+            badge.textContent = `Torn: ${currentTeam.name}`;
+            badge.classList.remove('hidden');
+
+            const avatar = document.getElementById('turn-indicator-avatar');
+            avatar.className = `w-9 h-9 rounded-full flex items-center justify-center text-white font-black shadow-md ${currentTeam.bg}`;
+            avatar.textContent = currentTeam.name.charAt(0).toUpperCase();
+
+            document.getElementById('turn-indicator-name').textContent = currentTeam.name;
+        }
+
+        // --- RENDER TEAMS INTERACTIVE SCOREBOARDS ---
+        function renderTeamsScoreboards() {
+            const container = document.getElementById('teams-scoreboard-row');
+            container.innerHTML = '';
+
+            teams.forEach((team, index) => {
+                const isActive = index === activeTeamIdx;
+                const card = document.createElement('div');
+                card.className = `bg-white dark:bg-slate-800 p-4 rounded-xl border shadow-sm flex flex-col justify-between transition-all duration-150 ${
+                    isActive ? 'ring-2 ring-brand-500 border-transparent scale-102 shadow-md' : 'border-slate-200 dark:border-slate-700'
+                }`;
+
+                // Wildcard badges
+                let wildcardsHtml = '';
+                if (gameSettings.wildcards) {
+                    const hasX2 = team.wildcards && team.wildcards.x2;
+                    const hasShield = team.wildcards && team.wildcards.shield;
+                    wildcardsHtml = `
+                        <div class="flex items-center space-x-1.5 mt-1.5 justify-center">
+                            <span title="Duplicador (x2)" class="text-[10px] px-2 py-0.5 rounded-full font-extrabold flex items-center space-x-0.5 ${hasX2 ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-500 border border-amber-205 dark:border-amber-900/40' : 'bg-slate-100 dark:bg-slate-900 text-slate-350 dark:text-slate-700 line-through'}">
+                                <i class="fa-solid fa-bolt"></i><span>x2</span>
+                            </span>
+                            <span title="Escut Protector" class="text-[10px] px-2 py-0.5 rounded-full font-extrabold flex items-center space-x-0.5 ${hasShield ? 'bg-blue-100 dark:bg-blue-950/40 text-blue-500 border border-blue-205 dark:border-blue-900/40' : 'bg-slate-100 dark:bg-slate-900 text-slate-350 dark:text-slate-700 line-through'}">
+                                <i class="fa-solid fa-shield-halved"></i><span>Escut</span>
+                            </span>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-3.5 h-3.5 rounded-full ${team.bg}"></span>
+                            <h4 class="font-bold text-slate-800 dark:text-slate-100 text-sm truncate max-w-[130px]">${team.name}</h4>
+                        </div>
+                        ${isActive ? '<span class="text-[10px] bg-brand-100 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 font-extrabold px-1.5 py-0.5 rounded uppercase">Selecciona</span>' : ''}
+                    </div>
+
+                    <div class="py-2.5 text-center">
+                        <p class="text-3xl font-black ${team.text}" id="score-display-${team.id}">${team.score} p.</p>
+                        ${wildcardsHtml}
+                    </div>
+
+                    <!-- Manual adjustments -->
+                    <div class="flex justify-center space-x-1 border-t pt-2 border-slate-100 dark:border-slate-700">
+                        <button onclick="manualAdjustScore('${team.id}', -50)" class="text-[10px] bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 hover:text-rose-600 dark:hover:bg-slate-750 px-2 py-1 rounded font-semibold text-slate-500 transition cursor-pointer">-50</button>
+                        <button onclick="manualAdjustScore('${team.id}', -100)" class="text-[10px] bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 hover:text-rose-600 dark:hover:bg-slate-750 px-2 py-1 rounded font-semibold text-slate-500 transition cursor-pointer">-100</button>
+                        <button onclick="manualAdjustScore('${team.id}', 100)" class="text-[10px] bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 hover:text-emerald-600 dark:hover:bg-slate-750 px-2 py-1 rounded font-semibold text-slate-500 transition cursor-pointer">+100</button>
+                        <button onclick="manualAdjustScore('${team.id}', 50)" class="text-[10px] bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 hover:text-emerald-600 dark:hover:bg-slate-750 px-2 py-1 rounded font-semibold text-slate-500 transition cursor-pointer">+50</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- POPULATE SCORING MODAL DROPDOWN ---
+        function populateScoringSelects() {
+            const select = document.getElementById('assign-team-select');
+            select.innerHTML = '';
+            teams.forEach((t, index) => {
+                const opt = document.createElement('option');
+                opt.value = index;
+                opt.textContent = t.name;
+                select.appendChild(opt);
+            });
+        }
+
+        // --- MANUAL POINTS ADJUSTMENT ---
+        function manualAdjustScore(teamId, val) {
+            const team = teams.find(t => t.id === teamId);
+            if (team) {
+                team.score = Math.max(0, team.score + val);
+                renderTeamsScoreboards();
+            }
+        }
+
+        // --- COUNTDOWN TIMER FUNCTIONS ---
+        function startTimer() {
+            stopTimer(); // Clear any existing interval
+            
+            if (gameSettings.timerDuration <= 0) {
+                document.getElementById('modal-timer-container').classList.add('hidden');
+                return;
+            }
+            
+            const timerContainer = document.getElementById('modal-timer-container');
+            const timerBar = document.getElementById('modal-timer-bar');
+            const timerSecs = document.getElementById('modal-timer-seconds');
+            
+            timerContainer.classList.remove('hidden');
+            timeLeft = gameSettings.timerDuration;
+            
+            // Reset transition and set bar to full
+            timerBar.style.transition = 'none';
+            timerBar.style.width = '100%';
+            timerSecs.textContent = `${timeLeft}s`;
+            
+            // Force browser reflow to apply the reset instantly
+            timerBar.offsetHeight;
+            
+            // Set transition time and target width
+            timerBar.style.transition = `width ${gameSettings.timerDuration}s linear`;
+            timerBar.style.width = '0%';
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerSecs.textContent = `${timeLeft}s`;
+                
+                if (timeLeft <= 5 && timeLeft > 0) {
+                    SoundEffects.play('tick');
+                    timerSecs.classList.add('text-rose-500', 'animate-pulse');
+                }
+                
+                if (timeLeft <= 0) {
+                    stopTimer();
+                    onTimerExpired();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            const timerSecs = document.getElementById('modal-timer-seconds');
+            if (timerSecs) {
+                timerSecs.classList.remove('text-rose-500', 'animate-pulse');
+            }
+        }
+        
+        function onTimerExpired() {
+            SoundEffects.play('timeout');
+
+            // Disable all options
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => btn.disabled = true);
+            
+            // Highlight correct answer
+            buttons.forEach(btn => {
+                const text = btn.querySelector('span').textContent;
+                const icon = btn.querySelector('i');
+                if (text === currentActiveQuestion.correct) {
+                    btn.className = "option-btn bg-emerald-50 dark:bg-emerald-950/20 border-2 border-emerald-500 p-4 rounded-xl text-left font-bold text-emerald-700 dark:text-emerald-300 flex items-center justify-between w-full";
+                    icon.className = "fa-solid fa-circle-check text-emerald-500";
+                } else {
+                    btn.className = "option-btn bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-4 rounded-xl text-left font-medium text-slate-400 flex items-center justify-between w-full opacity-60";
+                }
+            });
+            
+            // Show explanation block
+            const explanationBlock = document.getElementById('modal-explanation-block');
+            if (explanationBlock) explanationBlock.classList.remove('hidden');
+
+            const feedback = document.getElementById('modal-feedback');
+            const feedbackText = document.getElementById('modal-feedback-text');
+            const feedbackIcon = document.getElementById('modal-feedback-icon');
+            
+            feedback.className = "rounded-xl p-4 flex items-center space-x-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300";
+            feedbackIcon.textContent = "⏰";
+            feedbackText.textContent = `Temps esgotat! La resposta correcta era: ${currentActiveQuestion.correct}. Pots restar punts o continuar.`;
+            feedback.classList.remove('hidden');
+        }
+
+        // --- WILDCARD MANAGEMENT ---
+        function updateWildcardsRowForTeam() {
+            if (!gameSettings.wildcards) return;
+            const targetTeamIdx = parseInt(document.getElementById('assign-team-select').value, 10);
+            const team = teams[targetTeamIdx];
+            if (!team) return;
+
+            const btnX2 = document.getElementById('wildcard-btn-x2');
+            const btnShield = document.getElementById('wildcard-btn-shield');
+
+            const hasX2 = team.wildcards && team.wildcards.x2;
+            const hasShield = team.wildcards && team.wildcards.shield;
+
+            btnX2.disabled = !hasX2;
+            btnShield.disabled = !hasShield;
+
+            if (hasX2) {
+                if (activeWildcard === 'x2') {
+                    btnX2.className = "px-3 py-1.5 rounded-lg border-2 border-amber-500 bg-amber-500 text-white text-xs font-bold flex items-center space-x-1.5 transition duration-150 shadow cursor-pointer";
+                } else {
+                    btnX2.className = "px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-xs font-bold flex items-center space-x-1.5 transition duration-150 cursor-pointer";
+                }
+            } else {
+                btnX2.className = "px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-350 dark:text-slate-600 text-xs font-bold flex items-center space-x-1.5 transition duration-150 cursor-not-allowed opacity-40";
+            }
+
+            if (hasShield) {
+                if (activeWildcard === 'shield') {
+                    btnShield.className = "px-3 py-1.5 rounded-lg border-2 border-blue-500 bg-blue-500 text-white text-xs font-bold flex items-center space-x-1.5 transition duration-150 shadow cursor-pointer";
+                } else {
+                    btnShield.className = "px-3 py-1.5 rounded-lg border border-blue-200 dark:border-blue-900/60 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-xs font-bold flex items-center space-x-1.5 transition duration-150 cursor-pointer";
+                }
+            } else {
+                btnShield.className = "px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-350 dark:text-slate-600 text-xs font-bold flex items-center space-x-1.5 transition duration-150 cursor-not-allowed opacity-40";
+            }
+        }
+
+        function toggleWildcard(type) {
+            if (activeWildcard === type) {
+                activeWildcard = null;
+            } else {
+                activeWildcard = type;
+            }
+            updateWildcardsRowForTeam();
+            SoundEffects.play('tick');
+        }
+
+        // --- OPEN ACTIVE QUESTION MODAL ---
+        function openQuestion(categoryName, value, questionObj) {
+            currentActiveQuestion = questionObj;
+            currentActiveCategoryName = categoryName;
+            currentActiveValue = value;
+
+            const cellKey = `${categoryName}-${value}`;
+            const isSpecial = specialCells.includes(cellKey);
+
+            if (isSpecial) {
+                // Double the cell value!
+                currentActiveValue = value * 2;
+                
+                const currentTeam = teams[activeTeamIdx];
+                document.getElementById('special-team-name').textContent = currentTeam.name;
+                document.getElementById('special-old-points').textContent = value;
+                document.getElementById('special-new-points').textContent = currentActiveValue;
+                
+                const banner = document.getElementById('modal-special-banner');
+                banner.classList.remove('hidden');
+                
+                SoundEffects.play('dailyDouble');
+                
+                document.getElementById('btn-start-special').onclick = () => {
+                    banner.classList.add('hidden');
+                    loadQuestionModalContent(categoryName, currentActiveValue, questionObj);
+                };
+            } else {
+                // Play click sound
+                SoundEffects.play('tick');
+                loadQuestionModalContent(categoryName, currentActiveValue, questionObj);
+            }
+        }
+
+        function loadQuestionModalContent(categoryName, value, questionObj) {
+            document.getElementById('modal-points-badge').textContent = `${value} Punts`;
+            document.getElementById('modal-category-name').textContent = categoryName;
+            document.getElementById('modal-question-text').textContent = questionObj.text;
+            
+            // Hide feedback initially
+            const feedback = document.getElementById('modal-feedback');
+            feedback.classList.add('hidden');
+
+            // Default Assign Team Select to currently picking team
+            document.getElementById('assign-team-select').value = activeTeamIdx;
+
+            // Setup Wildcards Row
+            activeWildcard = null;
+            if (gameSettings.wildcards) {
+                document.getElementById('modal-wildcards-row').classList.remove('hidden');
+                updateWildcardsRowForTeam();
+            } else {
+                document.getElementById('modal-wildcards-row').classList.add('hidden');
+            }
+
+            // Render Answer Option Buttons
+            const container = document.getElementById('modal-options-container');
+            container.innerHTML = '';
+
+            const allAnswers = [questionObj.correct, ...questionObj.wrong];
+            allAnswers.sort(() => Math.random() - 0.5);
+
+            allAnswers.forEach(ans => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border-2 border-slate-200 dark:border-slate-700 p-4 rounded-xl text-left font-bold text-sm md:text-base flex items-center justify-between transition-all outline-none duration-150 w-full cursor-pointer";
+                btn.innerHTML = `
+                    <span>${ans}</span>
+                    <i class="fa-regular fa-circle text-slate-300 dark:text-slate-600"></i>
+                `;
+                btn.onclick = () => selectModalAnswer(ans, btn);
+                container.appendChild(btn);
+            });
+
+            // Didactic explanation block
+            const explanationBlock = document.createElement('div');
+            explanationBlock.id = "modal-explanation-block";
+            explanationBlock.className = "hidden rounded-xl p-4 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 text-slate-700 dark:text-slate-350 mt-4 text-sm text-left";
+            explanationBlock.innerHTML = `
+                <p class="font-extrabold text-indigo-750 dark:text-indigo-400 uppercase text-xs tracking-wider mb-1"><i class="fa-solid fa-circle-info"></i> Didàctica / Explicació</p>
+                <p class="leading-relaxed">${questionObj.explanation || "Explicació: La resposta escollida és correcta ja que respon al criteri pedagògic establert en la lliçó."}</p>
+            `;
+            
+            const oldExpl = document.getElementById('modal-explanation-block');
+            if (oldExpl) oldExpl.remove();
+            
+            feedback.after(explanationBlock);
+
+            // Unlock and reveal Modal
+            document.getElementById('modal-question').classList.remove('hidden');
+            
+            // Start the response timer!
+            startTimer();
+        }
+
+        // --- ANSWER SELECTION IN MODAL ---
+        function selectModalAnswer(selectedAnswer, selectedBtn) {
+            // Stop the countdown timer!
+            stopTimer();
+
+            // Disable other buttons
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => btn.disabled = true);
+
+            const isCorrect = selectedAnswer === currentActiveQuestion.correct;
+            const feedback = document.getElementById('modal-feedback');
+            const feedbackText = document.getElementById('modal-feedback-text');
+            const feedbackIcon = document.getElementById('modal-feedback-icon');
+
+            // Reveal pedagogical explanation block
+            const explanationBlock = document.getElementById('modal-explanation-block');
+            if (explanationBlock) {
+                explanationBlock.classList.remove('hidden');
+            }
+
+            // Visual feedback on clicked options
+            buttons.forEach(btn => {
+                const text = btn.querySelector('span').textContent;
+                const icon = btn.querySelector('i');
+
+                if (text === currentActiveQuestion.correct) {
+                    btn.className = "option-btn bg-emerald-50 dark:bg-emerald-950/20 border-2 border-emerald-500 p-4 rounded-xl text-left font-bold text-emerald-700 dark:text-emerald-300 flex items-center justify-between w-full";
+                    icon.className = "fa-solid fa-circle-check text-emerald-500";
+                } else if (btn === selectedBtn) {
+                    btn.className = "option-btn bg-rose-50 dark:bg-rose-950/20 border-2 border-rose-500 p-4 rounded-xl text-left font-bold text-rose-700 dark:text-rose-300 flex items-center justify-between w-full";
+                    icon.className = "fa-solid fa-circle-xmark text-rose-500";
+                } else {
+                    btn.className = "option-btn bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-4 rounded-xl text-left font-medium text-slate-400 flex items-center justify-between w-full opacity-60";
+                }
+            });
+
+            if (isCorrect) {
+                SoundEffects.play('correct');
+                feedback.className = "rounded-xl p-4 flex items-center space-x-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300";
+                feedbackIcon.textContent = "🎉";
+                feedbackText.textContent = `Correcte! L'equip seleccionat guanya els punts.`;
+            } else {
+                SoundEffects.play('incorrect');
+                feedback.className = "rounded-xl p-4 flex items-center space-x-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300";
+                feedbackIcon.textContent = "❌";
+                feedbackText.textContent = `Incorrecte! La resposta correcta era: ${currentActiveQuestion.correct}. Pots restar punts o donar rebot.`;
+            }
+
+            feedback.classList.remove('hidden');
+        }
+
+        // --- SUBMIT FINAL RESOLUTION OF QUESTION ---
+        function submitAnswerResolution(isAwardingPoints) {
+            const targetTeamIdx = parseInt(document.getElementById('assign-team-select').value, 10);
+            const team = teams[targetTeamIdx];
+
+            if (team) {
+                let pointsChange = currentActiveValue;
+                
+                if (isAwardingPoints) {
+                    // Check if wildcard 'x2' was active
+                    if (activeWildcard === 'x2') {
+                        pointsChange = pointsChange * 2;
+                        team.wildcards.x2 = false; // Consume it!
+                    }
+                    team.score += pointsChange;
+                } else {
+                    // Penalty calculations
+                    let penaltyVal = 0;
+                    if (gameSettings.penaltyMode === 'half') {
+                        penaltyVal = Math.round(pointsChange / 2);
+                    } else if (gameSettings.penaltyMode === 'full') {
+                        penaltyVal = pointsChange;
+                    }
+                    
+                    // Check if wildcard 'shield' was active
+                    if (activeWildcard === 'shield') {
+                        penaltyVal = 0; // Shield protects!
+                        team.wildcards.shield = false; // Consume it!
+                    }
+                    
+                    team.score = Math.max(0, team.score - penaltyVal);
+                }
+                
+                // Consume whatever wildcard was selected by the team anyway
+                if (activeWildcard && team.wildcards) {
+                    team.wildcards[activeWildcard] = false;
+                }
+            }
+
+            // Flag cell as played. To ensure we mark it played properly, use base cell value before doubling
+            const baseValue = specialCells.includes(`${currentActiveCategoryName}-${currentActiveValue / 2}`) ? currentActiveValue / 2 : currentActiveValue;
+            playedCells[`${currentActiveCategoryName}-${baseValue}`] = true;
+
+            closeQuestionModal();
+            
+            // Advance active picking turn to next team
+            activeTeamIdx = (activeTeamIdx + 1) % teams.length;
+            
+            renderJeopardyGrid();
+            updateTeamTurnIndicator();
+            renderTeamsScoreboards();
+
+            // Verify if there are any playable cells left
+            checkGameCompletion();
+        }
+
+        function closeQuestionModal() {
+            stopTimer();
+            document.getElementById('modal-question').classList.add('hidden');
+        }
+
+        // --- VERIFY GAME END ---
+        function checkGameCompletion() {
+            const keys = Object.keys(jeopardyBoard);
+            const pointRows = [100, 200, 300, 400, 500];
+            let totalCells = keys.length * pointRows.length;
+            let playedCount = Object.keys(playedCells).length;
+
+            if (playedCount >= totalCells) {
+                showFinalResults();
+            }
+        }
+
+        // --- CUSTOM CONFIRM DIALOG FOR RE-STARTING ---
+        async function confirmResetToSetup() {
+            const accepted = await showCustomConfirm(
+                "Tornar a l'Inici",
+                "Estàs segur que vols abandonar la partida actual i tornar a la pantalla de configuració? Es perdran tots els punts aconseguits fins ara.",
+                "🔄",
+                "Tornar a l'Inici",
+                true
+            );
+            if (accepted) {
+                stopConfetti();
+                document.getElementById('screen-game-board').classList.add('hidden');
+                document.getElementById('screen-setup').classList.remove('hidden');
+            }
+        }
+
+        // --- CUSTOM CONFIRM DIALOG FOR ENDING ---
+        async function confirmEndGame() {
+            const accepted = await showCustomConfirm(
+                "Finalitzar Concurs",
+                "Estàs segur que vols finalitzar el concurs ara mateix? Es revelarà el podi final amb les puntuacions que teniu ara.",
+                "🏁",
+                "Finalitzar Concurs",
+                true
+            );
+            if (accepted) {
+                showFinalResults();
+            }
+        }
+
+        // --- CONFETTI ENGINE ---
+        let confettiInterval = null;
+        function startConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.classList.remove('hidden');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+            const particles = [];
+
+            for (let i = 0; i < 150; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * canvas.height,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                    tiltAngle: 0
+                });
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p, idx) => {
+                    p.tiltAngle += p.tiltAngleIncremental;
+                    p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                    p.x += Math.sin(p.tiltAngle);
+                    p.tilt = Math.sin(p.tiltAngle - idx / 3) * 15;
+
+                    if (p.y > canvas.height) {
+                        particles[idx] = p;
+                        p.x = Math.random() * canvas.width;
+                        p.y = -20;
+                        p.tilt = Math.random() * 10 - 5;
+                    }
+
+                    ctx.beginPath();
+                    ctx.lineWidth = p.r;
+                    ctx.strokeStyle = p.color;
+                    ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                    ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                    ctx.stroke();
+                });
+            }
+
+            if (confettiInterval) clearInterval(confettiInterval);
+            confettiInterval = setInterval(draw, 24);
+        }
+
+        function stopConfetti() {
+            if (confettiInterval) {
+                clearInterval(confettiInterval);
+                confettiInterval = null;
+            }
+            const canvas = document.getElementById('confetti-canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                canvas.classList.add('hidden');
+            }
+        }
+
+        // --- FINAL RESULTS PODIUM ---
+        function showFinalResults() {
+            document.getElementById('screen-game-board').classList.add('hidden');
+            document.getElementById('screen-game-results').classList.remove('hidden');
+
+            SoundEffects.play('applause');
+            startConfetti();
+
+            const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
+            
+            // Render Visual Stand (Top 3)
+            const visualStand = document.getElementById('podium-visual-stand');
+            visualStand.innerHTML = '';
+            
+            // Re-order top 3 to read 2nd, 1st, 3rd from left to right
+            const podiumPositions = [
+                { rank: 2, team: sortedTeams[1], height: 'h-24 sm:h-28', color: 'bg-slate-350 dark:bg-slate-600', trophy: '🥈', textTheme: sortedTeams[1] ? sortedTeams[1].text : '' },
+                { rank: 1, team: sortedTeams[0], height: 'h-32 sm:h-36', color: 'bg-amber-400 dark:bg-amber-500 border-2 border-yellow-300 dark:border-yellow-500/50', trophy: '🥇', textTheme: sortedTeams[0] ? sortedTeams[0].text : '' },
+                { rank: 3, team: sortedTeams[2], height: 'h-16 sm:h-20', color: 'bg-orange-500/60 dark:bg-orange-700/60', trophy: '🥉', textTheme: sortedTeams[2] ? sortedTeams[2].text : '' }
+            ];
+            
+            podiumPositions.forEach(pos => {
+                if (!pos.team) return; // Skip if fewer than 3 teams
+                
+                const col = document.createElement('div');
+                col.className = "flex flex-col items-center w-28 sm:w-32 transition-all duration-700 transform translate-y-4 opacity-0";
+                col.innerHTML = `
+                    <div class="text-center mb-2 space-y-0.5">
+                        <span class="text-3xl block animate-bounce">${pos.trophy}</span>
+                        <p class="font-black text-xs truncate max-w-[100px] text-slate-800 dark:text-white">${pos.team.name}</p>
+                        <p class="font-black text-sm ${pos.textTheme}">${pos.team.score} p.</p>
+                    </div>
+                    <div class="${pos.height} w-full ${pos.color} rounded-t-xl flex items-center justify-center shadow-lg relative">
+                        <span class="text-4xl font-extrabold text-white/50">${pos.rank}</span>
+                    </div>
+                `;
+                visualStand.appendChild(col);
+                
+                // Stagger column animation
+                setTimeout(() => {
+                    col.classList.remove('translate-y-4', 'opacity-0');
+                }, 200 * pos.rank);
+            });
+
+            // Render general list
+            const container = document.getElementById('podium-list-container');
+            container.innerHTML = '';
+
+            sortedTeams.forEach((team, idx) => {
+                const item = document.createElement('div');
+                let trophy = "";
+                if (idx === 0) trophy = "🥇";
+                else if (idx === 1) trophy = "🥈";
+                else if (idx === 2) trophy = "🥉";
+                else trophy = "👏";
+
+                item.className = "flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-750 transition-all duration-300 hover:scale-101";
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl">${trophy}</span>
+                        <div>
+                            <p class="font-black text-slate-800 dark:text-white">${team.name}</p>
+                            <p class="text-xs text-slate-400">Posició ${idx + 1}</p>
+                        </div>
+                    </div>
+                    <span class="text-xl font-black ${team.text}">${team.score} Punts</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function resetAppToSetup() {
+            stopConfetti();
+            document.getElementById('screen-game-results').classList.add('hidden');
+            document.getElementById('screen-setup').classList.remove('hidden');
+        }
+
+        // --- FETCH WITH BACKOFF/RETRY ENGINE ---
+        async function fetchWithRetry(url, options, retries = 5, delay = 1000) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    throw new Error(`Servidor ocupat o erroni (Estat: ${response.status})`);
+                }
+                return await response.json();
+            } catch (err) {
+                if (retries > 0) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchWithRetry(url, options, retries - 1, delay * 2);
+                }
+                throw err;
+            }
+        }
+
+        // --- AI JEOPARDY GENERATOR ---
+        async function generateAiJeopardy() {
+            const topics = [];
+            for (let i = 1; i <= 5; i++) {
+                const val = document.getElementById(`ai-topic-${i}`).value.trim();
+                if (val) {
+                    topics.push(val);
+                }
+            }
+
+            const grade = document.getElementById('ai-grade-select').value;
+            const currentKey = getApiKey();
+            const currentModel = gameSettings.model || "gemini-2.5-flash";
+
+            if (topics.length === 0) {
+                showError("Per favor, introduïu almenys un tema principal per guiar la intel·ligència artificial.");
+                return;
+            }
+
+            if (!currentKey) {
+                openSettingsModal();
+                showError("Per favor, introdueix la teva API Key de Gemini per poder generar taulers amb IA.");
+                return;
+            }
+
+            // Show custom loader
+            const overlay = document.getElementById('loading-overlay');
+            overlay.classList.remove('hidden');
+
+            const systemPrompt = "Ets un expert pedagog i professor especialitzat en la creació de dinàmiques de joc tipus Jeopardy per a escoles en català.";
+            
+            const promptText = `Crea un tauler complet de Jeopardy en Català compost per exactament 5 categories d'estudi.
+El nivell acadèmic dels alumnes és: "${grade}".
+Els temes de referència introduïts pel docent són:
+${topics.map((t, idx) => `- Tema ${idx + 1}: ${t}`).join('\n')}
+
+Requisits de distribució de temes:
+- Heu de repartir i cobrir els ${topics.length} temes indicats dalt entre les 5 categories del tauler (és a dir, si hi ha 1 tema, totes les categories en versen; si n'hi ha 5, hi haurà exactament 1 categoria per cadascun; si n'hi ha un nombre entremig, distribuïu-les proporcionalment).
+
+Requisits molt estrictes per a cada categoria:
+- Cada categoria ha de tenir exactament 5 preguntes indexades pel seu valor progressiu de dificultat: 100 (fàcil), 200 (mitjà-fàcil), 300 (mitjà), 400 (mitjà-difícil), 500 (difícil).
+- Cada pregunta ha de constar de: text (la pregunta), correct (la resposta encertada), wrong (un array de exactament 3 opcions de distracció incorrectes per l'edat dels alumnes però raonables) i explanation (una explicació pedagògica molt breu de 1-2 frases de per què la resposta és la correcta).
+- L'idioma del tauler ha de ser 100% Català.`;
+
+            // Setup JSON schema matching Jeopardy board structure
+            const responseSchema = {
+                type: "OBJECT",
+                properties: {
+                    categories: {
+                        type: "ARRAY",
+                        minItems: 5,
+                        maxItems: 5,
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                name: { type: "STRING" },
+                                questions: {
+                                    type: "ARRAY",
+                                    minItems: 5,
+                                    maxItems: 5,
+                                    items: {
+                                        type: "OBJECT",
+                                        properties: {
+                                            value: { type: "INTEGER" },
+                                            text: { type: "STRING" },
+                                            correct: { type: "STRING" },
+                                            wrong: {
+                                                type: "ARRAY",
+                                                minItems: 3,
+                                                maxItems: 3,
+                                                items: { type: "STRING" }
+                                            },
+                                            explanation: { type: "STRING" }
+                                        },
+                                        required: ["value", "text", "correct", "wrong", "explanation"]
+                                    }
+                                }
+                            },
+                            required: ["name", "questions"]
+                        }
+                    }
+                },
+                required: ["categories"]
+            };
+
+            const payload = {
+                contents: [{ parts: [{ text: promptText }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: responseSchema
+                }
+            };
+
+            try {
+                const responseData = await fetchWithRetry(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${currentKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    }
+                );
+
+                const rawText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!rawText) {
+                    throw new Error("L'API de Gemini no ha retornat contingut compatible.");
+                }
+
+                const parsed = JSON.parse(rawText);
+                if (!parsed.categories || parsed.categories.length < 5) {
+                    throw new Error("El JSON retornat és incomplet o té menys de 5 categories.");
+                }
+
+                // Format Jeopardy board mapping
+                jeopardyBoard = {};
+                parsed.categories.forEach((cat, index) => {
+                    jeopardyBoard[`cat-${index}`] = {
+                        name: cat.name,
+                        questions: cat.questions
+                    };
+                });
+
+                // Clear states and reset wildcards
+                playedCells = {};
+                activeTeamIdx = 0;
+                teams.forEach(t => {
+                    t.score = 0;
+                    t.wildcards = { x2: true, shield: true };
+                });
+
+                setupSpecialCells();
+
+                // Load Game board
+                const mainTopicTitle = topics.join(" / ");
+                document.getElementById('board-topic-title').textContent = `Tema IA: ${mainTopicTitle}`;
+                overlay.classList.add('hidden');
+                launchJeopardyBoard();
+
+            } catch (error) {
+                console.error(error);
+                overlay.classList.add('hidden');
+                showError("No s'ha pogut establir la connexió o la Clau API és incorrecta. Si us plau, revisa la configuració.");
+            }
+        }
+
+        // --- ERROR BANNERS ---
+        function showError(msg) {
+            const banner = document.getElementById('error-banner');
+            document.getElementById('error-banner-desc').textContent = msg;
+            banner.classList.remove('hidden');
+            setTimeout(() => {
+                banner.classList.add('hidden');
+            }, 6000);
+        }
+    </script>
+</body>
+</html>
